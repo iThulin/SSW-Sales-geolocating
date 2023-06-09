@@ -3,8 +3,8 @@ title: "Sales location analysis"
 author: "Ian Thulin"
 date: "2023-05-11"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include= FALSE}
@@ -264,6 +264,64 @@ load(file = "Maps/NM_map.RData")
 load(file = "Maps/RR_map.RData")
 load(file = "Maps/SF_map.RData")
 load(file = "Maps/SFcounty_map.RData")
+```
+
+```{r compute statistics for each city, include=TRUE}
+# Stats for SF
+SF_sales_by_zip <- SF_sales %>%
+  group_by(Zip) %>%
+  summarize(
+    count = n(),
+    med_Amount = median(GrossAmount),
+    med_lat = mean(Latitude),
+    med_long = mean(Longitude)
+  )
+head(SF_sales_by_zip)
+
+# Stats for RR
+RR_sales_by_zip <- RR_sales %>%
+  group_by(Zip) %>%
+  summarize(
+    count = n(),
+    med_Amount = median(GrossAmount),
+    med_lat = mean(Latitude),
+    med_long = mean(Longitude)
+  )
+head(RR_sales_by_zip)
+     
+# Stats for Metro
+Metro_sales_by_zip <- Metro_sales %>%
+  group_by(Zip) %>%
+  summarize(
+    count = n(),
+    med_Amount = median(GrossAmount),
+    med_lat = mean(Latitude),
+    med_long = mean(Longitude)
+  )
+head(Metro_sales_by_zip)
+
+# Stats for Sales
+Sales_by_zip <- Sales %>%
+  group_by(Zip) %>%
+  summarize(
+    count = n(),
+    med_Amount = median(GrossAmount),
+    med_lat = mean(Latitude),
+    med_long = mean(Longitude)
+  )
+head(Sales_by_zip)
+
+# Stats for Prospect
+Prospect_by_zip <- Prospect %>%
+  group_by(Zip) %>%
+  summarize(
+    count = n(),
+    med_Amount = median(GrossAmount),
+    med_lat = mean(Latitude),
+    med_long = mean(Longitude)
+  )
+head(Prospect_by_zip)
+
 ```
 
 ```{r test for maps, include=TRUE, warning=FALSE}
