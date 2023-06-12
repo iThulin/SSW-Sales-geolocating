@@ -323,6 +323,14 @@ Prospect_by_zip <- Prospect %>%
 head(Prospect_by_zip)
 
 ```
+``` {r zipcode maps}
+NM +
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = Sales,
+                    size = .5,
+                    adjust = .001) +
+  scale_color_viridis()
+```
 
 ```{r test for maps, include=TRUE, warning=FALSE}
 
@@ -362,8 +370,39 @@ NM +
                     adjust = .001) +
   scale_color_viridis()
 ```
+```{r test map, include=TRUE}
+#utils::data(COVID)
+#install.packages(lubridate)
+#library(lubridate)
 
-```{citation, include=TRUE}
+#Metro_sales$ContractDate <- mdy(Metro_sales$ContractDate)
+
+Metro_sales %>%  
+  ggplot() +
+  geom_horizon(aes(ContractDate, 
+                   GrossAmount), origin = 'min', horizonscale = 4) +
+  scale_fill_hcl(palette = 'BluGrn', reverse = T) +
+  facet_grid(Zip~.) +
+  theme_few() +
+  theme(
+    panel.spacing.y=unit(0, "lines"),
+    strip.text.y = element_text(size = 7, angle = 0, hjust = 0),
+    legend.position = 'none',
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.border = element_blank()
+    ) +
+  scale_x_date(expand=c(0,0), date_breaks = "1 year") +
+  ggtitle('Sales by Zipcode in the Metro area') +
+  xlab('Date')
+```
+
+```{r test environment, include=TRUE}
+scatterplot3d(x = Metro_sales$Latitude, y = Metro_sales$Longitude, z = Metro_sales$GrossAmount)
+```
+
+```{r citation, include=TRUE}
 citation("ggmap")
 sessionInfo()
 ```
