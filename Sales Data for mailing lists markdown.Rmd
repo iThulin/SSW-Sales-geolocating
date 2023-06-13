@@ -7,11 +7,11 @@ output:
   pdf_document: default
 ---
 
-```{r setup, include= FALSE}
-knitr::opts_chunk$set(echo = TRUE, include= TRUE)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 ```
 
-```{r install packages, include=FALSE, eval=FALSE}
+```{r install packages, include=FALSE,eval=FALSE}
 packages_to_install <- c("tidygeocoder",
                          "readxl",
                          "stringer",
@@ -24,12 +24,14 @@ packages_to_install <- c("tidygeocoder",
                          "maptools",
                          "rgdal",
                          "ggmap",
-                         "lubridate")
+                         "lubridate",
+                         "vtable",
+                         "psych")
 not_installed <- packages_to_install[!(packages_to_install %in% installed.packages()[ , "Package"])]
 if(length(not_installed)) install.packages(not_installed)
 ```
 
-```{r load packages, include=TRUE, warning=FALSE}
+```{r load packages, include=FALSE}
 library(ggplot2)
 library("tidygeocoder")
 library(readxl)
@@ -45,6 +47,8 @@ library(maptools)
 library(rgdal)
 library(ggmap)
 library(lubridate)
+library(vtable)
+library(psych)
 source("https://raw.githubusercontent.com/iascchen/VisHealth/master/R/calendarHeat.R")
 source("https://raw.githubusercontent.com/iascchen/VisHealth/master/R/calendarHeat.R")
 ```
@@ -52,8 +56,6 @@ source("https://raw.githubusercontent.com/iascchen/VisHealth/master/R/calendarHe
 ```{r data folder creation}
 if(!file.exists("Data")){dir.create("Data")}
 ```
-
-We need to clean the address data in order to improve the geocoding function we will use later. To start I will parse the street number, name, type, and direction from the given data. Once the fields have been separated we can adjust any capitalization errors and combine the fields into a form usable by tidygeocoder.
 
 ```{r clean the address data}
 if(!file.exists("Data/Raw data (pre-geocoding).csv")) {
@@ -123,8 +125,6 @@ write.csv(Raw_data, "Data/Raw data (pre-geocoding).csv", row.names=FALSE)
 }
 ```
 
-The next step in the data cleaning process is to create a new field for the latitude and longitude of each address in our data set. Using the tidygeocoder package in R we can input an address and receive the associated latitude and longitude for each data point. This information can then be passed into the Google maps API for further analysis.
-
 ```{r create final data set}
 if(!file.exists("Data/Geolocated Data - Sales & Prospect - 5.11.2023.csv")) {
   
@@ -141,13 +141,12 @@ write.csv(Comb_data, "Data/Geolocated Data - Sales & Prospect - 5.11.2023.csv", 
 }
 ```
 
-```{r register google API, include=FALSE}
+```{r register google API}
 # GOOGELE_API KEY: AIzaSyAP8DfNNEAWuwN8aa2Ew_TopWR1rPLlSC4
 ggmap::register_google(key="AIzaSyAP8DfNNEAWuwN8aa2Ew_TopWR1rPLlSC4")
-citation("ggmap")
 ```
 
-```{r create datasets for mapping, include=TRUE}
+```{r create datasets for mapping}
 Data <- read.csv("Data/Geolocated Data - Sales & Prospect - 5.11.2023.csv")
 
 # Remove all data fields taht do not have a contract date
@@ -166,7 +165,7 @@ SF_sales <- subset(Sales, Sales$City == "Santa Fe")
 Metro_sales <- dplyr::bind_rows(ABQ_sales, RR_sales)
 ```
 
-```{r Adjust formatting for dates, include=TRUE}
+```{r Adjust formatting for dates}
 Sales$ContractDate <- mdy(Sales$ContractDate)
 Metro_sales$ContractDate <- mdy(Metro_sales$ContractDate)
 SF_sales$ContractDate <- mdy(SF_sales$ContractDate)
@@ -175,7 +174,7 @@ ABQ_sales$ContractDate <- mdy(ABQ_sales$ContractDate)
 Prospect$DateAdded <- mdy(Prospect$DateAdded)
 ```
 
-```{r create product categories, include=TRUE}
+```{r create product categories}
 # Create sub categories for each type of product in a city
 ABQ_PC_sales <- subset(ABQ_sales, ABQ_sales$productid == "PC")
 ABQ_Bath_sales <- subset(ABQ_sales, ABQ_sales$productid == "Bath")
@@ -247,13 +246,13 @@ ABQ_sales <- ABQ_sales[ABQ_sales$Distance <= 15,]
 SF_sales <- SF_sales[SF_sales$Distance <= 20,]
 ```
 
-```{r fetch and save maps for future use, include=TRUE}
+```{r fetch and save maps for future use}
 
 if (!file.exists("Maps/NM_map.RData")){
 NM <- ggmap(get_googlemap(center = c(lon = -106.018066, lat =34.307144),
                           zoom = 7, scale = 2, 
                           maptype = 'roadmap', 
-                          color = 'color'))
+                          color = 'bw'))
 save(NM, file = "Maps/NM_map.RData")
 }
 
@@ -261,7 +260,7 @@ if (!file.exists("Maps/Metro_map.RData")){
 Metro <- ggmap(get_googlemap(center = c(lon = mean(Metro_sales$Longitude), mean(Metro_sales$Latitude)),
                           zoom = 11, scale = 1, 
                           maptype = 'roadmap', 
-                          color = 'color'))
+                          color = 'bw'))
 save(Metro, file = "Maps/Metro_map.RData")
 }
 
@@ -269,7 +268,7 @@ if (!file.exists("Maps/RR_map.RData")){
 RR <- ggmap(get_googlemap(center = c(lon = mean(RR_sales$Longitude), mean(RR_sales$Latitude)),
                           zoom = 12, scale = 1, 
                           maptype = 'roadmap', 
-                          color = 'color'))
+                          color = 'bw'))
 save(RR, file = "Maps/RR_map.RData")
 }
 
@@ -277,7 +276,7 @@ if (!file.exists("Maps/SFcounty_map.RData")){
 SFcounty <- ggmap(get_googlemap(center = c(lon = mean(SF_sales$Longitude), mean(SF_sales$Latitude)),
                           zoom = 11, scale = 1, 
                           maptype = 'roadmap', 
-                          color = 'color'))
+                          color = 'bw'))
 save(SFcounty, file = "Maps/SFcounty_map.RData")
 }
 
@@ -285,12 +284,12 @@ if (!file.exists("Maps/SF_map.RData")){
 SF <- ggmap(get_googlemap(center = c(lon = mean(SF_sales$Longitude), mean(SF_sales$Latitude)),
                           zoom = 12, scale = 1, 
                           maptype = 'roadmap', 
-                          color = 'color'))
+                          color = 'bw'))
 save(SF, file = "Maps/SF_map.RData")
 }
 ```
 
-```{r load maps from file, include=TRUE}
+```{r load maps from file}
 load(file = "Maps/Metro_map.RData")
 load(file = "Maps/NM_map.RData")
 load(file = "Maps/RR_map.RData")
@@ -298,9 +297,7 @@ load(file = "Maps/SF_map.RData")
 load(file = "Maps/SFcounty_map.RData")
 ```
 
-```{r compute statistics for each city, include=TRUE}
-library(dplyr)
-
+```{r compute statistics for each city, include=FALSE}
 # Stats for SF
 SF_sales_by_zip <- SF_sales %>%
   group_by(Zip) %>%
@@ -310,7 +307,26 @@ SF_sales_by_zip <- SF_sales %>%
     med_lat = mean(Latitude),
     med_long = mean(Longitude)
   )
-head(SF_sales_by_zip)
+
+SF_sales_by_zip %>%
+  arrange(-count)
+
+show(SF_sales_by_zip)
+
+# Stats for ABQ
+ABQ_sales_by_zip <- ABQ_sales %>%
+  group_by(Zip) %>%
+  summarize(
+    count = n(),
+    med_Amount = median(GrossAmount),
+    med_lat = mean(Latitude),
+    med_long = mean(Longitude)
+  )
+
+ABQ_sales_by_zip %>%
+  arrange(-count)
+
+show(ABQ_sales_by_zip)
 
 # Stats for RR
 RR_sales_by_zip <- RR_sales %>%
@@ -321,7 +337,11 @@ RR_sales_by_zip <- RR_sales %>%
     med_lat = mean(Latitude),
     med_long = mean(Longitude)
   )
-head(RR_sales_by_zip)
+
+RR_sales_by_zip %>%
+  arrange(-count)
+
+show(RR_sales_by_zip)
      
 # Stats for Metro
 Metro_sales_by_zip <- Metro_sales %>%
@@ -332,7 +352,11 @@ Metro_sales_by_zip <- Metro_sales %>%
     med_lat = mean(Latitude),
     med_long = mean(Longitude)
   )
-head(Metro_sales_by_zip)
+
+Metro_sales_by_zip %>%
+  arrange(-count)
+
+show(Metro_sales_by_zip)
 
 # Stats for Sales
 Sales_by_zip <- Sales %>%
@@ -343,22 +367,31 @@ Sales_by_zip <- Sales %>%
     med_lat = mean(Latitude),
     med_long = mean(Longitude)
   )
-head(Sales_by_zip)
+
+Sales_by_zip %>%
+  arrange(-count)
+
+show(Sales_by_zip)
 
 # Stats for Prospect
 Prospect_by_zip <- Prospect %>%
   group_by(Zip) %>%
   summarize(
     count = n(),
-    med_Amount = median(GrossAmount),
     med_lat = mean(Latitude),
     med_long = mean(Longitude)
   )
-head(Prospect_by_zip)
+
+Prospect_by_zip %>%
+  arrange(-count)
+
+show(Prospect_by_zip)
 
 ```
 
-```{r test for maps, include=TRUE, warning=TRUE}
+```{r test for maps}
+# Santa Fe Sales
+show(SF_sales_by_zip)
 
 SF +
   geom_pointdensity(aes(x = Longitude,
@@ -366,43 +399,158 @@ SF +
                     data = SF_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_viridis()
+  scale_color_viridis() +
+  ggtitle("Santa Fe Total Sales")
+
+SF +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = SF_PC_sales,
+                    size = 1,
+                    adjust = .05) +
+  scale_color_viridis() +
+  ggtitle("Santa Fe Patio Cover Sales")
+
+SF +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = SF_Sun_sales,
+                    size = 1,
+                    adjust = .05) +
+  scale_color_viridis() +
+  ggtitle("Santa Fe Sunroom Sales")
+
+SF +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = SF_Bath_sales,
+                    size = 1,
+                    adjust = .05) +
+  scale_color_viridis() +
+  ggtitle("Santa Fe Bath Sales")
+
+SF +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = SF_Kitchen_sales,
+                    size = 1,
+                    adjust = .05) +
+  scale_color_viridis() +
+  ggtitle("Santa Fe Kitchen Sales")
+
+SF +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = SF_Win_sales,
+                    size = 1,
+                    adjust = .05) +
+  scale_color_viridis() +
+  ggtitle("Santa Fe Window Sales")
+
+# Rio Rancho Sales
+show(RR_sales_by_zip)
 
 RR + 
   geom_pointdensity(aes(x = Longitude, y = Latitude),
                     data = RR_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_viridis()
+  scale_color_viridis() +
+  ggtitle("Rio Rancho Total Sales")
 
-Metro +
+RR + 
   geom_pointdensity(aes(x = Longitude, y = Latitude),
-                    data = ABQ_sales,
-                    size = .5,
+                    data = RR_PC_sales,
+                    size = 1,
                     adjust = .01) +
-  scale_color_viridis()
+  scale_color_viridis() +
+  ggtitle("Rio Rancho Pation Cover Sales")
+
+RR + 
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = RR_Sun_sales,
+                    size = 1,
+                    adjust = .01) +
+  scale_color_viridis() +
+  ggtitle("Rio Rancho Sunroom Sales")
+
+RR + 
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = RR_Bath_sales,
+                    size = 1,
+                    adjust = .01) +
+  scale_color_viridis() +
+  ggtitle("Rio Rancho Bath Sales")
+
+RR + 
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = RR_Kitchen_sales,
+                    size = 1,
+                    adjust = .01) +
+  scale_color_viridis() +
+  ggtitle("Rio Rancho Kitchen Sales")
+
+RR + 
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = RR_Win_sales,
+                    size = 1,
+                    adjust = .01) +
+  scale_color_viridis() +
+  ggtitle("Rio Rancho Window Sales")
+
+# Metro Sales
+show(Metro_sales_by_zip)
 
 Metro +
   geom_pointdensity(aes(x = Longitude, y = Latitude),
                     data = Metro_sales,
                     size = .5,
-                    adjust = .01)+
-  scale_color_viridis()
+                    adjust = .01) +
+  scale_color_viridis() +
+  ggtitle("Metro Area Total Sales")
 
-NM +
+Metro +
   geom_pointdensity(aes(x = Longitude, y = Latitude),
-                    data = Sales,
+                    data = Metro_PC_sales,
                     size = .5,
-                    adjust = .001) +
-  scale_color_viridis()
+                    adjust = .01)+
+  scale_color_viridis() +
+  ggtitle("Metro Area Patio Cover Sales")
+
+Metro +
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = Metro_Sun_sales,
+                    size = .5,
+                    adjust = .01)+
+  scale_color_viridis() +
+  ggtitle("Metro Area Sunrooom Sales")
+
+Metro +
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = Metro_Bath_sales,
+                    size = .5,
+                    adjust = .01)+
+  scale_color_viridis() +
+  ggtitle("Metro Area Bath Sales")
+
+Metro +
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = Metro_Kitchen_sales,
+                    size = .5,
+                    adjust = .01)+
+  scale_color_viridis() +
+  ggtitle("Metro Area Kitchen Sales")
+
+Metro +
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = Metro_Win_sales,
+                    size = .5,
+                    adjust = .01)+
+  scale_color_viridis() +
+  ggtitle("Metro Area Window Sales")
 ```
 
-
-```{r test}
-summary(Sales)
-```
-
-```{r break out specific products, include=TRUE}
+```{r break out specific products}
 p1 = calendarHeat(
   Sales$ContractDate,
   Sales$GrossAmount,
@@ -411,30 +559,34 @@ p1 = calendarHeat(
   varname = "Historic Sales Seasonality"
 )
 
-summary(Sales)
+st(Sales,title = 'Overall Sales',
+   vars = c('GrossAmount', 'Latitude', 'Longitude'))
 
-p2 = calendarHeat(
-  ABQ_sales$ContractDate,
-  ABQ_sales$GrossAmount,
-  color = 'r2b',
-  ncolors = 25,
-  varname = "Total Sales in Albuquerque"
-)
+st(ABQ_sales,title = 'Albuquerque Sales',
+   vars = c('GrossAmount', 'Latitude', 'Longitude'))
 
-summary(ABQ_sales)
+st(RR_sales,title = 'Rio Rancho Sales',
+   vars = c('GrossAmount', 'Latitude', 'Longitude'))
 
-p3 = calendarHeat(
-  ABQ_PC_sales$ContractDate,
-  ABQ_PC_sales$GrossAmount,
-  color = 'r2b',
-  ncolors = 25,
-  varname = "Patio Cover Sales in Albuquerque"
-)
+st(SF_sales,title = 'Metro Area Sales',
+   vars = c('GrossAmount', 'Latitude', 'Longitude'))
 
-summary(ABQ_PC_sales)
+st(SF_sales_by_zip,title = 'Santa Fe Sales',
+   vars = c('GrossAmount', 'Latitude', 'Longtitude'))
 ```
 
-```{r citation, include=TRUE}
+```{r timeseries}
+#devtools::install_github('Ather-Energy/ggTimeSeries')
+
+time <- ggplot(ABQ_PC_sales, aes(x=ContractDate, y=GrossAmount)) +
+  geom_line() + 
+  geom_smooth(method = lm, se = FALSE, size = 1.5) +
+  xlab("") +
+  ggtitle("Albuquerque PC Sales")
+time
+```
+
+```{r citation}
 citation("ggmap")
 sessionInfo()
 ```
