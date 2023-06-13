@@ -11,22 +11,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE, include= TRUE)
 ```
 
-```{r library functions, include= FALSE}
-library("tidygeocoder")
-library(readxl)
-library(dplyr)
-library(stringr)
-library(tidyr)
-library(dplyr)
-library(ggplot2)
-library(viridis)
-library(ggpointdensity)
-library(usmap)
-library(maptools)
-library(rgdal)
-library(ggmap)
-```
-
 ```{r install packages, include=FALSE, eval=FALSE}
 packages_to_install <- c("tidygeocoder",
                          "readxl",
@@ -39,10 +23,14 @@ packages_to_install <- c("tidygeocoder",
                          "usmap",
                          "maptools",
                          "rgdal",
-                         "ggmap")
+                         "ggmap",
+                         "lubridate")
 not_installed <- packages_to_install[!(packages_to_install %in% installed.packages()[ , "Package"])]
 if(length(not_installed)) install.packages(not_installed)
+```
 
+```{r load packages, include=TRUE, warning=FALSE}
+library(ggplot2)
 library("tidygeocoder")
 library(readxl)
 library(dplyr)
@@ -56,6 +44,9 @@ library(usmap)
 library(maptools)
 library(rgdal)
 library(ggmap)
+library(lubridate)
+source("https://raw.githubusercontent.com/iascchen/VisHealth/master/R/calendarHeat.R")
+source("https://raw.githubusercontent.com/iascchen/VisHealth/master/R/calendarHeat.R")
 ```
 
 ```{r data folder creation}
@@ -159,15 +150,56 @@ citation("ggmap")
 ```{r create datasets for mapping, include=TRUE}
 Data <- read.csv("Data/Geolocated Data - Sales & Prospect - 5.11.2023.csv")
 
+# Remove all data fields taht do not have a contract date
 Sales <- subset(Data, (!is.na(Data$ContractDate)))
 Prospect <- subset(Data, (is.na(Data$ContractDate)))
 
+# Remove all data points with a negative sale value
+Sales <- Sales[Sales$GrossAmount >= 0,]
+
+# Isolate each city into its own dataframe
 ABQ_sales <- subset(Sales, Sales$City == "Albuquerque")
 RR_sales <- subset(Sales, Sales$City == "Rio Rancho")
 SF_sales <- subset(Sales, Sales$City == "Santa Fe")
 
-Metro_sales <- bind_rows(ABQ_sales, RR_sales)
+# Combine the ABW and RR data into a single Metro area
+Metro_sales <- dplyr::bind_rows(ABQ_sales, RR_sales)
+```
 
+```{r Adjust formatting for dates, include=TRUE}
+Sales$ContractDate <- mdy(Sales$ContractDate)
+Metro_sales$ContractDate <- mdy(Metro_sales$ContractDate)
+SF_sales$ContractDate <- mdy(SF_sales$ContractDate)
+RR_sales$ContractDate <- mdy(RR_sales$ContractDate)
+ABQ_sales$ContractDate <- mdy(ABQ_sales$ContractDate)
+Prospect$DateAdded <- mdy(Prospect$DateAdded)
+```
+
+```{r create product categories, include=TRUE}
+# Create sub categories for each type of product in a city
+ABQ_PC_sales <- subset(ABQ_sales, ABQ_sales$productid == "PC")
+ABQ_Bath_sales <- subset(ABQ_sales, ABQ_sales$productid == "Bath")
+ABQ_Sun_sales <- subset(ABQ_sales, ABQ_sales$productid == "Sun")
+ABQ_Kitchen_sales <- subset(ABQ_sales, ABQ_sales$productid == "Kitchen")
+ABQ_Win_sales <- subset(ABQ_sales, ABQ_sales$productid == "Win")
+
+RR_PC_sales <- subset(RR_sales, RR_sales$productid == "PC")
+RR_Bath_sales <- subset(RR_sales, RR_sales$productid == "Bath")
+RR_Sun_sales <- subset(RR_sales, RR_sales$productid == "Sun")
+RR_Kitchen_sales <- subset(RR_sales, RR_sales$productid == "Kitchen")
+RR_Win_sales <- subset(RR_sales, RR_sales$productid == "Win")
+
+SF_PC_sales <- subset(SF_sales, SF_sales$productid == "PC")
+SF_Bath_sales <- subset(SF_sales, SF_sales$productid == "Bath")
+SF_Sun_sales <- subset(SF_sales, SF_sales$productid == "Sun")
+SF_Kitchen_sales <- subset(SF_sales, SF_sales$productid == "Kitchen")
+SF_Win_sales <- subset(SF_sales, SF_sales$productid == "Win")
+
+Metro_PC_sales <- subset(Metro_sales, Metro_sales$productid == "PC")
+Metro_Bath_sales <- subset(Metro_sales, Metro_sales$productid == "Bath")
+Metro_Sun_sales <- subset(Metro_sales, Metro_sales$productid == "Sun")
+Metro_Kitchen_sales <- subset(Metro_sales, Metro_sales$productid == "Kitchen")
+Metro_Win_sales <- subset(Metro_sales, Metro_sales$productid == "Win")
 
 ```
 
@@ -267,6 +299,8 @@ load(file = "Maps/SFcounty_map.RData")
 ```
 
 ```{r compute statistics for each city, include=TRUE}
+library(dplyr)
+
 # Stats for SF
 SF_sales_by_zip <- SF_sales %>%
   group_by(Zip) %>%
@@ -323,16 +357,8 @@ Prospect_by_zip <- Prospect %>%
 head(Prospect_by_zip)
 
 ```
-``` {r zipcode maps}
-NM +
-  geom_pointdensity(aes(x = Longitude, y = Latitude),
-                    data = Sales,
-                    size = .5,
-                    adjust = .001) +
-  scale_color_viridis()
-```
 
-```{r test for maps, include=TRUE, warning=FALSE}
+```{r test for maps, include=TRUE, warning=TRUE}
 
 SF +
   geom_pointdensity(aes(x = Longitude,
@@ -370,36 +396,42 @@ NM +
                     adjust = .001) +
   scale_color_viridis()
 ```
-```{r test map, include=TRUE}
-#utils::data(COVID)
-#install.packages(lubridate)
-#library(lubridate)
 
-#Metro_sales$ContractDate <- mdy(Metro_sales$ContractDate)
 
-Metro_sales %>%  
-  ggplot() +
-  geom_horizon(aes(ContractDate, 
-                   GrossAmount), origin = 'min', horizonscale = 4) +
-  scale_fill_hcl(palette = 'BluGrn', reverse = T) +
-  facet_grid(Zip~.) +
-  theme_few() +
-  theme(
-    panel.spacing.y=unit(0, "lines"),
-    strip.text.y = element_text(size = 7, angle = 0, hjust = 0),
-    legend.position = 'none',
-    axis.text.y = element_blank(),
-    axis.title.y = element_blank(),
-    axis.ticks.y = element_blank(),
-    panel.border = element_blank()
-    ) +
-  scale_x_date(expand=c(0,0), date_breaks = "1 year") +
-  ggtitle('Sales by Zipcode in the Metro area') +
-  xlab('Date')
+```{r test}
+summary(Sales)
 ```
 
-```{r test environment, include=TRUE}
-scatterplot3d(x = Metro_sales$Latitude, y = Metro_sales$Longitude, z = Metro_sales$GrossAmount)
+```{r break out specific products, include=TRUE}
+p1 = calendarHeat(
+  Sales$ContractDate,
+  Sales$GrossAmount,
+  color = 'r2b',
+  ncolors = 25,
+  varname = "Historic Sales Seasonality"
+)
+
+summary(Sales)
+
+p2 = calendarHeat(
+  ABQ_sales$ContractDate,
+  ABQ_sales$GrossAmount,
+  color = 'r2b',
+  ncolors = 25,
+  varname = "Total Sales in Albuquerque"
+)
+
+summary(ABQ_sales)
+
+p3 = calendarHeat(
+  ABQ_PC_sales$ContractDate,
+  ABQ_PC_sales$GrossAmount,
+  color = 'r2b',
+  ncolors = 25,
+  varname = "Patio Cover Sales in Albuquerque"
+)
+
+summary(ABQ_PC_sales)
 ```
 
 ```{r citation, include=TRUE}
