@@ -1,0 +1,337 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Sales location analysis},
+  pdfauthor={Ian Thulin},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Sales location analysis}
+\author{Ian Thulin}
+\date{2023-05-11}
+
+\begin{document}
+\maketitle
+
+\begin{table}
+
+\caption{\label{tab:Santa Fe maps}Santa Fe Sales by Zip}
+\centering
+\begin{tabular}[t]{l|r|r|r|r|r|r|r|r}
+\hline
+ZIP & \# & Mean & Median & Min & Q1 & Q3 & Max & Std Dev\\
+\hline
+87507 & 173 & 13333.41 & 9631.00 & 0.00 & 5293.000 & 5293.000 & 78618.99 & 11909.80106\\
+\hline
+87505 & 157 & 14387.59 & 10079.72 & 552.00 & 5619.000 & 5619.000 & 72500.00 & 12866.42060\\
+\hline
+87508 & 87 & 18009.97 & 13832.00 & 0.00 & 7180.000 & 7180.000 & 100000.00 & 16680.91371\\
+\hline
+87501 & 76 & 12129.49 & 8181.35 & 1880.00 & 4654.812 & 4654.812 & 46270.00 & 9842.43514\\
+\hline
+87506 & 29 & 18264.39 & 14251.00 & 750.00 & 7784.000 & 7784.000 & 91000.00 & 17757.92383\\
+\hline
+87502 & 2 & 11692.27 & 11692.27 & 9720.00 & 10706.135 & 10706.135 & 13664.54 & 2789.21098\\
+\hline
+87504 & 2 & 1954.50 & 1954.50 & 1887.00 & 1920.750 & 1920.750 & 2022.00 & 95.45942\\
+\hline
+87101 & 1 & 14987.87 & 14987.87 & 14987.87 & 14987.870 & 14987.870 & 14987.87 & NA\\
+\hline
+87509 & 1 & 19156.00 & 19156.00 & 19156.00 & 19156.000 & 19156.000 & 19156.00 & NA\\
+\hline
+87540 & 1 & 21359.91 & 21359.91 & 21359.91 & 21359.910 & 21359.910 & 21359.91 & NA\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Santa Fe maps-1} \end{center}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Santa Fe maps-2} \end{center}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Santa Fe maps-3} \end{center}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Santa Fe maps-4} \end{center}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Santa Fe maps-5} \end{center}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Santa Fe maps-6} \end{center}
+
+\begin{table}
+
+\caption{\label{tab:Rio Rancho maps}Santa Fe Sales by Zip}
+\centering
+\begin{tabular}[t]{l|r|r|r|r|r|r|r|r}
+\hline
+ZIP & \# & Mean & Median & Min & Q1 & Q3 & Max & Std Dev\\
+\hline
+87124 & 673 & 11079.50 & 7800.0 & 0.00 & 4800.00 & 4800.00 & 67300.00 & 10090.216\\
+\hline
+87144 & 501 & 12478.60 & 9275.0 & 0.00 & 5966.54 & 5966.54 & 66491.28 & 9824.232\\
+\hline
+87114 & 3 & 6892.66 & 8535.0 & 3485.98 & 6010.49 & 6010.49 & 8657.00 & 2950.902\\
+\hline
+87112 & 2 & 6137.50 & 6137.5 & 3690.00 & 4913.75 & 4913.75 & 8585.00 & 3461.288\\
+\hline
+87123 & 1 & 2489.00 & 2489.0 & 2489.00 & 2489.00 & 2489.00 & 2489.00 & NA\\
+\hline
+87174 & 1 & 3265.00 & 3265.0 & 3265.00 & 3265.00 & 3265.00 & 3265.00 & NA\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Rio Rancho maps-1} \end{center}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Rio Rancho maps-2} \end{center}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Rio Rancho maps-3} \end{center}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Rio Rancho maps-4} \end{center}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Rio Rancho maps-5} \end{center}
+
+\begin{center}\includegraphics[width=1\linewidth]{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Rio Rancho maps-6} \end{center}
+
+\begin{table}
+
+\caption{\label{tab:Metro maps}Santa Fe Sales by Zip}
+\centering
+\begin{tabular}[t]{l|r|r|r|r|r|r|r|r}
+\hline
+ZIP & \# & Mean & Median & Min & Q1 & Q3 & Max & Std Dev\\
+\hline
+87124 & 728 & 11333.223 & 8001.50 & 0 & 4905.750 & 4905.750 & 67300.00 & 10319.254\\
+\hline
+87114 & 648 & 10952.110 & 7500.00 & 0 & 4400.000 & 4400.000 & 97950.00 & 10279.760\\
+\hline
+87120 & 568 & 10771.166 & 7061.00 & 0 & 4099.500 & 4099.500 & 108227.00 & 10703.765\\
+\hline
+87111 & 517 & 11490.250 & 7397.20 & 0 & 4150.000 & 4150.000 & 64999.00 & 11283.094\\
+\hline
+87144 & 514 & 12458.411 & 9167.00 & 0 & 5916.000 & 5916.000 & 66491.28 & 9845.227\\
+\hline
+87112 & 412 & 12202.048 & 7890.50 & 0 & 4054.765 & 4054.765 & 92910.00 & 12473.986\\
+\hline
+87123 & 400 & 10779.268 & 7375.50 & 0 & 4199.769 & 4199.769 & 122703.00 & 11611.660\\
+\hline
+87109 & 304 & 11188.989 & 7434.00 & 0 & 4369.000 & 4369.000 & 70500.00 & 10429.564\\
+\hline
+87110 & 299 & 10259.729 & 6665.00 & 0 & 4176.340 & 4176.340 & 50000.00 & 9462.926\\
+\hline
+87121 & 267 & 9547.734 & 6225.00 & 0 & 3672.610 & 3672.610 & 100528.00 & 9964.211\\
+\hline
+87122 & 185 & 13033.649 & 7736.00 & 537 & 4574.000 & 4574.000 & 88906.53 & 13502.841\\
+\hline
+87113 & 144 & 10259.683 & 6856.00 & 0 & 3348.250 & 3348.250 & 53100.00 & 10090.581\\
+\hline
+87105 & 134 & 11788.881 & 7470.10 & 0 & 4706.750 & 4706.750 & 96790.00 & 12823.216\\
+\hline
+87108 & 134 & 9787.857 & 7201.50 & 0 & 3510.715 & 3510.715 & 44357.00 & 9022.012\\
+\hline
+87107 & 119 & 13893.630 & 8482.00 & 208 & 4786.450 & 4786.450 & 64950.00 & 14401.327\\
+\hline
+87106 & 95 & 8959.972 & 6417.25 & 0 & 3015.500 & 3015.500 & 47000.00 & 9384.793\\
+\hline
+87104 & 35 & 12629.045 & 8750.00 & 2711 & 4757.905 & 4757.905 & 63164.00 & 11758.349\\
+\hline
+87102 & 24 & 9834.890 & 7807.50 & 1500 & 5654.517 & 5654.517 & 38390.00 & 8016.011\\
+\hline
+87174 & 2 & 9903.500 & 9903.50 & 3265 & 6584.250 & 6584.250 & 16542.00 & 9388.257\\
+\hline
+87193 & 2 & 20251.500 & 20251.50 & 18000 & 19125.750 & 19125.750 & 22503.00 & 3184.102\\
+\hline
+87008 & 1 & 19381.000 & 19381.00 & 19381 & 19381.000 & 19381.000 & 19381.00 & NA\\
+\hline
+87035 & 1 & 5464.000 & 5464.00 & 5464 & 5464.000 & 5464.000 & 5464.00 & NA\\
+\hline
+87103 & 1 & 4440.000 & 4440.00 & 4440 & 4440.000 & 4440.000 & 4440.00 & NA\\
+\hline
+87118 & 1 & 10400.000 & 10400.00 & 10400 & 10400.000 & 10400.000 & 10400.00 & NA\\
+\hline
+87125 & 1 & 32461.000 & 32461.00 & 32461 & 32461.000 & 32461.000 & 32461.00 & NA\\
+\hline
+87501 & 1 & 20000.000 & 20000.00 & 20000 & 20000.000 & 20000.000 & 20000.00 & NA\\
+\hline
+87527 & 1 & 16970.000 & 16970.00 & 16970 & 16970.000 & 16970.000 & 16970.00 & NA\\
+\hline
+\end{tabular}
+\end{table}
+
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Metro maps-1.pdf}
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Metro maps-2.pdf}
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Metro maps-3.pdf}
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Metro maps-4.pdf}
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Metro maps-5.pdf}
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/Metro maps-6.pdf}
+
+\begin{verbatim}
+## Loading required package: lattice
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: grid
+\end{verbatim}
+
+\begin{verbatim}
+## Loading required package: chron
+\end{verbatim}
+
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/break out specific products-1.pdf}
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/break out specific products-2.pdf}
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/break out specific products-3.pdf}
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/break out specific products-4.pdf}
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/break out specific products-5.pdf}
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/break out specific products-6.pdf}
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/break out specific products-7.pdf}
+
+\begin{verbatim}
+## `geom_smooth()` using formula = 'y ~ x'
+\end{verbatim}
+
+\includegraphics{Sales-Data-for-mailing-lists-markdown_files/figure-latex/timeseries-1.pdf}
+
+\begin{verbatim}
+## 
+## To cite package 'ggmap' in publications use:
+## 
+##   D. Kahle and H. Wickham. ggmap: Spatial Visualization with ggplot2.
+##   The R Journal, 5(1), 144-161. URL
+##   http://journal.r-project.org/archive/2013-1/kahle-wickham.pdf
+## 
+## A BibTeX entry for LaTeX users is
+## 
+##   @Article{,
+##     author = {David Kahle and Hadley Wickham},
+##     title = {ggmap: Spatial Visualization with ggplot2},
+##     journal = {The R Journal},
+##     year = {2013},
+##     volume = {5},
+##     number = {1},
+##     pages = {144--161},
+##     url = {https://journal.r-project.org/archive/2013-1/kahle-wickham.pdf},
+##   }
+\end{verbatim}
+
+\begin{verbatim}
+## R version 4.2.2 (2022-10-31 ucrt)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 19045)
+## 
+## Matrix products: default
+## 
+## locale:
+## [1] LC_COLLATE=English_United States.utf8 
+## [2] LC_CTYPE=English_United States.utf8   
+## [3] LC_MONETARY=English_United States.utf8
+## [4] LC_NUMERIC=C                          
+## [5] LC_TIME=English_United States.utf8    
+## 
+## attached base packages:
+## [1] grid      stats     graphics  grDevices utils     datasets  methods  
+## [8] base     
+## 
+## other attached packages:
+##  [1] lattice_0.20-45      RColorBrewer_1.1-3   psych_2.3.3         
+##  [4] vtable_1.4.4         kableExtra_1.3.4     lubridate_1.9.2     
+##  [7] ggmap_3.0.2          rgdal_1.6-7          maptools_1.1-7      
+## [10] sp_1.6-1             usmap_0.6.2          ggpointdensity_0.1.0
+## [13] viridis_0.6.3        viridisLite_0.4.2    tidyr_1.3.0         
+## [16] stringr_1.5.0        dplyr_1.1.2          readxl_1.4.2        
+## [19] tidygeocoder_1.0.5   ggplot2_3.4.2       
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_1.0.10         svglite_2.1.1       png_0.1-8          
+##  [4] digest_0.6.31       utf8_1.2.3          R6_2.5.1           
+##  [7] cellranger_1.1.0    plyr_1.8.8          evaluate_0.21      
+## [10] highr_0.10          httr_1.4.6          pillar_1.9.0       
+## [13] RgoogleMaps_1.4.5.3 rlang_1.1.1         rstudioapi_0.14    
+## [16] Matrix_1.5-1        rmarkdown_2.22      splines_4.2.2      
+## [19] labeling_0.4.2      webshot_0.5.4       foreign_0.8-83     
+## [22] munsell_0.5.0       compiler_4.2.2      xfun_0.39          
+## [25] pkgconfig_2.0.3     systemfonts_1.0.4   mnormt_2.1.1       
+## [28] mgcv_1.8-41         htmltools_0.5.5     tidyselect_1.2.0   
+## [31] tibble_3.2.1        gridExtra_2.3       fansi_1.0.4        
+## [34] withr_2.5.0         bitops_1.0-7        nlme_3.1-160       
+## [37] gtable_0.3.3        lifecycle_1.0.3     magrittr_2.0.3     
+## [40] scales_1.2.1        cli_3.6.1           stringi_1.7.12     
+## [43] farver_2.1.1        xml2_1.3.4          generics_0.1.3     
+## [46] vctrs_0.6.2         tools_4.2.2         glue_1.6.2         
+## [49] purrr_1.0.1         jpeg_0.1-10         parallel_4.2.2     
+## [52] fastmap_1.1.1       yaml_2.3.7          timechange_0.2.0   
+## [55] colorspace_2.1-0    rvest_1.0.3         knitr_1.43
+\end{verbatim}
+
+\end{document}

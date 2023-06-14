@@ -3,7 +3,7 @@ title: "Sales location analysis"
 author: "Ian Thulin"
 date: "2023-05-11"
 output:
-  #html_document: default
+  html_document: default
   pdf_document: default
 ---
 
@@ -248,7 +248,7 @@ ABQ_sales <- ABQ_sales[ABQ_sales$Distance <= 15,]
 SF_sales <- SF_sales[SF_sales$Distance <= 20,]
 ```
 
-```{r fetch and save maps for future use}
+```{r fetch and save maps for future use, out.width = "100%", fig.align = "center"}
 
 if (!file.exists("Maps/NM_map.RData")){
 NM <- ggmap(get_googlemap(center = c(lon = -106.018066, lat =34.307144),
@@ -299,7 +299,7 @@ load(file = "Maps/SF_map.RData")
 load(file = "Maps/SFcounty_map.RData")
 ```
 
-```{r Santa Fe maps}
+```{r Santa Fe maps, out.width = "100%", fig.align = "center"}
 #Santa Fe Stats
 SF_sales_by_zip <- SF_sales %>%
   group_by(Zip) %>%
@@ -377,7 +377,7 @@ SF +
   ggtitle("Santa Fe Window Sales")
 ```
 
-```{r Rio Rancho maps}
+```{r Rio Rancho maps, out.width = "100%", fig.align = "center"}
 # Rio Rancho Sales
 
 RR_sales_by_zip <- RR_sales %>%
