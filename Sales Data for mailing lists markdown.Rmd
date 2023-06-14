@@ -3,7 +3,7 @@ title: "Sales location analysis"
 author: "Ian Thulin"
 date: "2023-05-11"
 output:
-  html_document: default
+  #html_document: default
   pdf_document: default
 ---
 
@@ -26,7 +26,8 @@ packages_to_install <- c("tidygeocoder",
                          "ggmap",
                          "lubridate",
                          "vtable",
-                         "psych")
+                         "psych",
+                         "RColorBrewer")
 not_installed <- packages_to_install[!(packages_to_install %in% installed.packages()[ , "Package"])]
 if(length(not_installed)) install.packages(not_installed)
 ```
@@ -49,6 +50,7 @@ library(ggmap)
 library(lubridate)
 library(vtable)
 library(psych)
+library(RColorBrewer)
 source("https://raw.githubusercontent.com/iascchen/VisHealth/master/R/calendarHeat.R")
 source("https://raw.githubusercontent.com/iascchen/VisHealth/master/R/calendarHeat.R")
 ```
@@ -297,101 +299,28 @@ load(file = "Maps/SF_map.RData")
 load(file = "Maps/SFcounty_map.RData")
 ```
 
-```{r compute statistics for each city, include=FALSE}
-# Stats for SF
+```{r Santa Fe maps}
+#Santa Fe Stats
 SF_sales_by_zip <- SF_sales %>%
   group_by(Zip) %>%
-  summarize(
+  dplyr::summarize(
     count = n(),
-    med_Amount = median(GrossAmount),
-    med_lat = mean(Latitude),
-    med_long = mean(Longitude)
-  )
-
-SF_sales_by_zip %>%
+    mean_Value = mean(GrossAmount),
+    med_Value = median(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.25),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
   arrange(-count)
 
-show(SF_sales_by_zip)
+kable(SF_sales_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      caption= "Santa Fe Sales by Zip")%>%
+  kable_styling()
 
-# Stats for ABQ
-ABQ_sales_by_zip <- ABQ_sales %>%
-  group_by(Zip) %>%
-  summarize(
-    count = n(),
-    med_Amount = median(GrossAmount),
-    med_lat = mean(Latitude),
-    med_long = mean(Longitude)
-  )
-
-ABQ_sales_by_zip %>%
-  arrange(-count)
-
-show(ABQ_sales_by_zip)
-
-# Stats for RR
-RR_sales_by_zip <- RR_sales %>%
-  group_by(Zip) %>%
-  summarize(
-    count = n(),
-    med_Amount = median(GrossAmount),
-    med_lat = mean(Latitude),
-    med_long = mean(Longitude)
-  )
-
-RR_sales_by_zip %>%
-  arrange(-count)
-
-show(RR_sales_by_zip)
-     
-# Stats for Metro
-Metro_sales_by_zip <- Metro_sales %>%
-  group_by(Zip) %>%
-  summarize(
-    count = n(),
-    med_Amount = median(GrossAmount),
-    med_lat = mean(Latitude),
-    med_long = mean(Longitude)
-  )
-
-Metro_sales_by_zip %>%
-  arrange(-count)
-
-show(Metro_sales_by_zip)
-
-# Stats for Sales
-Sales_by_zip <- Sales %>%
-  group_by(Zip) %>%
-  summarize(
-    count = n(),
-    med_Amount = median(GrossAmount),
-    med_lat = mean(Latitude),
-    med_long = mean(Longitude)
-  )
-
-Sales_by_zip %>%
-  arrange(-count)
-
-show(Sales_by_zip)
-
-# Stats for Prospect
-Prospect_by_zip <- Prospect %>%
-  group_by(Zip) %>%
-  summarize(
-    count = n(),
-    med_lat = mean(Latitude),
-    med_long = mean(Longitude)
-  )
-
-Prospect_by_zip %>%
-  arrange(-count)
-
-show(Prospect_by_zip)
-
-```
-
-```{r test for maps}
-# Santa Fe Sales
-show(SF_sales_by_zip)
+# Santa Fe Maps
 
 SF +
   geom_pointdensity(aes(x = Longitude,
@@ -399,7 +328,7 @@ SF +
                     data = SF_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Santa Fe Total Sales")
 
 SF +
@@ -408,7 +337,7 @@ SF +
                     data = SF_PC_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Santa Fe Patio Cover Sales")
 
 SF +
@@ -417,7 +346,7 @@ SF +
                     data = SF_Sun_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Santa Fe Sunroom Sales")
 
 SF +
@@ -426,7 +355,7 @@ SF +
                     data = SF_Bath_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Santa Fe Bath Sales")
 
 SF +
@@ -435,7 +364,7 @@ SF +
                     data = SF_Kitchen_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Santa Fe Kitchen Sales")
 
 SF +
@@ -444,18 +373,39 @@ SF +
                     data = SF_Win_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Santa Fe Window Sales")
+```
 
+```{r Rio Rancho maps}
 # Rio Rancho Sales
-show(RR_sales_by_zip)
 
+RR_sales_by_zip <- RR_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    med_Value = median(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.25),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(RR_sales_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      caption= "Santa Fe Sales by Zip")%>%
+  kable_styling()
+
+# Rio Ranco Maps
 RR + 
   geom_pointdensity(aes(x = Longitude, y = Latitude),
                     data = RR_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Rio Rancho Total Sales")
 
 RR + 
@@ -463,7 +413,7 @@ RR +
                     data = RR_PC_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Rio Rancho Pation Cover Sales")
 
 RR + 
@@ -471,7 +421,7 @@ RR +
                     data = RR_Sun_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Rio Rancho Sunroom Sales")
 
 RR + 
@@ -479,7 +429,7 @@ RR +
                     data = RR_Bath_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Rio Rancho Bath Sales")
 
 RR + 
@@ -487,7 +437,7 @@ RR +
                     data = RR_Kitchen_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Rio Rancho Kitchen Sales")
 
 RR + 
@@ -495,18 +445,38 @@ RR +
                     data = RR_Win_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Rio Rancho Window Sales")
+```
 
+```{r Metro maps}
 # Metro Sales
-show(Metro_sales_by_zip)
+Metro_sales_by_zip <- Metro_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    med_Value = median(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.25),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
 
+kable(Metro_sales_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      caption= "Santa Fe Sales by Zip")%>%
+  kable_styling()
+
+# Metro Maps
 Metro +
   geom_pointdensity(aes(x = Longitude, y = Latitude),
                     data = Metro_sales,
                     size = .5,
                     adjust = .01) +
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Metro Area Total Sales")
 
 Metro +
@@ -514,7 +484,7 @@ Metro +
                     data = Metro_PC_sales,
                     size = .5,
                     adjust = .01)+
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Metro Area Patio Cover Sales")
 
 Metro +
@@ -522,7 +492,7 @@ Metro +
                     data = Metro_Sun_sales,
                     size = .5,
                     adjust = .01)+
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Metro Area Sunrooom Sales")
 
 Metro +
@@ -530,7 +500,7 @@ Metro +
                     data = Metro_Bath_sales,
                     size = .5,
                     adjust = .01)+
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Metro Area Bath Sales")
 
 Metro +
@@ -538,7 +508,7 @@ Metro +
                     data = Metro_Kitchen_sales,
                     size = .5,
                     adjust = .01)+
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Metro Area Kitchen Sales")
 
 Metro +
@@ -546,33 +516,31 @@ Metro +
                     data = Metro_Win_sales,
                     size = .5,
                     adjust = .01)+
-  scale_color_viridis() +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Metro Area Window Sales")
 ```
 
 ```{r break out specific products}
+
+# Remove all outliers from the total sales for the company
+Sales_matrix <- data.frame(Sales$ContractDate, Sales$GrossAmount)
+
+Q1 <- quantile(Sales_matrix$Sales.GrossAmount, .25)
+Q3 <- quantile(Sales_matrix$Sales.GrossAmount, .75)
+
+IQR <- IQR(Sales_matrix$Sales.GrossAmount)
+
+Sales_no_outlier <- subset(Sales_matrix,
+                          Sales_matrix$Sales.GrossAmount > (Q1 - 1.5*IQR) &
+                            Sales_matrix$Sales.GrossAmount < (Q3 + 1.5*IQR))
+
 p1 = calendarHeat(
-  Sales$ContractDate,
-  Sales$GrossAmount,
+  Sales_no_outlier$Sales.ContractDate,
+  Sales_no_outlier$Sales.GrossAmount,
   color = 'r2b',
-  ncolors = 25,
-  varname = "Historic Sales Seasonality"
-)
+  ncolors = 15,
+  varname = "Historic Sales Seasonality")
 
-st(Sales,title = 'Overall Sales',
-   vars = c('GrossAmount', 'Latitude', 'Longitude'))
-
-st(ABQ_sales,title = 'Albuquerque Sales',
-   vars = c('GrossAmount', 'Latitude', 'Longitude'))
-
-st(RR_sales,title = 'Rio Rancho Sales',
-   vars = c('GrossAmount', 'Latitude', 'Longitude'))
-
-st(SF_sales,title = 'Metro Area Sales',
-   vars = c('GrossAmount', 'Latitude', 'Longitude'))
-
-st(SF_sales_by_zip,title = 'Santa Fe Sales',
-   vars = c('GrossAmount', 'Latitude', 'Longtitude'))
 ```
 
 ```{r timeseries}
