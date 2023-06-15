@@ -1,0 +1,983 @@
+---
+title: "Sales location analysis"
+author: "Ian Thulin"
+output:
+  html_document: default
+params:
+  date: !r Sys.Date()
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+```
+
+```{r install packages, include=FALSE,eval=FALSE}
+packages_to_install <- c("tidygeocoder",
+                         "readxl",
+                         "stringer",
+                         "tidyr",
+                         "dplyr",
+                         "ggplot2",
+                         "viridis",
+                         "ggpointdensity",
+                         "usmap",
+                         "maptools",
+                         "rgdal",
+                         "ggmap",
+                         "lubridate",
+                         "vtable",
+                         "psych",
+                         "RColorBrewer")
+not_installed <- packages_to_install[!(packages_to_install %in% installed.packages()[ , "Package"])]
+if(length(not_installed)) install.packages(not_installed)
+```
+
+```{r load packages, include=FALSE}
+library(ggplot2)
+library("tidygeocoder")
+library(readxl)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(viridis)
+library(ggpointdensity)
+library(usmap)
+library(maptools)
+library(rgdal)
+library(ggmap)
+library(lubridate)
+library(vtable)
+library(psych)
+library(RColorBrewer)
+source("https://raw.githubusercontent.com/iascchen/VisHealth/master/R/calendarHeat.R")
+source("https://raw.githubusercontent.com/iascchen/VisHealth/master/R/calendarHeat.R")
+```
+
+```{r data folder creation}
+if(!file.exists("Data")){dir.create("Data")}
+```
+
+```{r clean the address data}
+if(!file.exists("Data/Raw data (pre-geocoding).csv")) {
+
+# Load in the original data files
+Raw_sales_data <- read_excel("Data/Sandia Sunrooms - Sales Data - Lead Perfection - 5.11.2023.xlsx")
+Raw_prospect_data <- read_excel("Data/Sandia Sunrooms - Prospect Data - Lead Perfection - 5.11.2023.xlsx")
+
+# We need to remove several fields from the given data set to protect the anonymity of our clients
+Raw_sales_data <- Raw_sales_data %>% select(-FirstName, -LastName, -Phone, -Phone2)
+Raw_prospect_data <- Raw_prospect_data %>% rename("id" = "CustNumber",
+                                                  "productid" = "Productid",
+                                                  "SubSource" = "SourceSubDescr")
+Raw_prospect_data$id <- as.numeric(as.character(Raw_prospect_data$id))
+
+# Combine the two data sets into a single data frame consisting of all sales and prospect information
+Raw_data <- dplyr::bind_rows(Raw_sales_data, Raw_prospect_data)
+  # Convert the address column to upper case to help type and direction recognition
+Raw_data$Address1 <- toupper(Raw_data$Address1)
+
+# Regular expression for each component we need to strip
+number_regex <- "^\\d+"
+street_regex <- "\\b[A-Za-z]+(\\s+(?!ST|AVE|BLVD|DR|CT|LN|RD|WAY|CIR|TER|HWY|NE|SE|NW|SW)[A-Za-z]+)*\\b"
+type_regex <- "\\b(?:ST|AVE|BLVD|DR|CT|LN|RD|WAY|CIR|PL|TER|HWY)\\b"
+direction_regex <- "\\b(?:N|S|E|W|NE|SE|NW|SW)\\b"
+
+# Extract each component and add the value as a new column
+Raw_data['StreetNumber'] <- str_extract(Raw_data$Address1, number_regex)
+Raw_data <- Raw_data %>% relocate(StreetNumber, .before = City)
+
+Raw_data['StreetName'] <- str_extract(Raw_data$Address1, street_regex)
+Raw_data <- Raw_data %>% relocate(StreetName, .before = City)
+
+Raw_data['StreetType'] <- str_extract(Raw_data$Address1, type_regex)
+Raw_data <- Raw_data %>% relocate(StreetType, .before = City)
+
+Raw_data['StreetDirection'] <- str_extract(Raw_data$Address1, direction_regex)
+Raw_data <- Raw_data %>% relocate(StreetDirection, .before = City)
+
+# Convert StreetName and StreetType back to title case to correct grammar
+Raw_data$StreetName <- str_to_title(Raw_data$StreetName)
+Raw_data$StreetType <- str_to_title(Raw_data$StreetType)
+
+# Set the value of Address2 equal to the form
+# "StreetNumber" "StreetName" "StreetType" "Direction" "City", "State" "Zipcode"
+
+# Create a new data frame to combine all columns while omitting NA values.
+AddressPart1 <- data.frame(Raw_data$StreetNumber, Raw_data$StreetName, Raw_data$StreetType, Raw_data$StreetDirection)
+AddressPart1$FullAddress <- apply(AddressPart1, 1, function(x) paste(x[!is.na(x)], collapse = " "))
+
+# Reassign the combined address to Address2 in Raw_data and then past in the city, state and zip with commas
+Raw_data$Address2 <- AddressPart1$FullAddress
+Raw_data$Address2 <- paste(Raw_data$Address2, ", ", Raw_data$City, ", ", Raw_data$State, Raw_data$Zip)
+Raw_data <- Raw_data %>% rename('FullAddress' = 'Address2')
+Raw_data$StreetName <- AddressPart1$FullAddress
+
+# Create a new data frame to geocode the address information
+Raw_Geo_data <- data.frame(AddressPart1$FullAddress, Raw_data$City, Raw_data$State, Raw_data$Zip)
+
+# Remove all the redundant data fields created in cleaning this portion of the data
+Raw_data <- Raw_data %>% select(-StreetNumber, -StreetType, -StreetDirection, -Address1)
+rm(AddressPart1)
+
+# Export the cleaned data to CSV files in the data folder
+write.csv(Raw_Geo_data, "Data/Data for export to Geocodio.csv", row.names=FALSE)
+write.csv(Raw_data, "Data/Raw data (pre-geocoding).csv", row.names=FALSE)
+}
+```
+
+```{r create final data set}
+if(!file.exists("Data/Geolocated Data - Sales & Prospect - 5.11.2023.csv")) {
+  
+# Load the previously created csv files in preparation for merging
+Temp_data <- read.csv("Data/Geocoded Addresses.csv")
+Pre_Geo <- read.csv("Data/Raw data (pre-geocoding).csv")
+
+# Remove unneeded columns from geo-data
+Temp_data <- Temp_data[-c(2:5,10:19)]
+
+# Combine the two data sets and save to file
+Comb_data <- cbind(Pre_Geo, Temp_data[c("Latitude", "Longitude", "Accuracy.Score", "Accuracy.Type")])
+write.csv(Comb_data, "Data/Geolocated Data - Sales & Prospect - 5.11.2023.csv", row.names=FALSE)
+}
+```
+
+```{r register google API}
+# GOOGELE_API KEY: AIzaSyAP8DfNNEAWuwN8aa2Ew_TopWR1rPLlSC4
+ggmap::register_google(key="AIzaSyAP8DfNNEAWuwN8aa2Ew_TopWR1rPLlSC4")
+```
+
+```{r create datasets for mapping}
+Data <- read.csv("Data/Geolocated Data - Sales & Prospect - 5.11.2023.csv")
+
+# Remove all data fields taht do not have a contract date
+Sales <- subset(Data, (!is.na(Data$ContractDate)))
+Prospect <- subset(Data, (is.na(Data$ContractDate)))
+
+# Remove all data points with a negative sale value
+Sales <- Sales[Sales$GrossAmount >= 0,]
+
+# Isolate each city into its own dataframe
+ABQ_sales <- subset(Sales, Sales$City == "Albuquerque")
+RR_sales <- subset(Sales, Sales$City == "Rio Rancho")
+SF_sales <- subset(Sales, Sales$City == "Santa Fe")
+
+# Combine the ABW and RR data into a single Metro area
+Metro_sales <- dplyr::bind_rows(ABQ_sales, RR_sales)
+```
+
+```{r Adjust formatting for dates}
+Sales$ContractDate <- mdy(Sales$ContractDate)
+Metro_sales$ContractDate <- mdy(Metro_sales$ContractDate)
+SF_sales$ContractDate <- mdy(SF_sales$ContractDate)
+RR_sales$ContractDate <- mdy(RR_sales$ContractDate)
+ABQ_sales$ContractDate <- mdy(ABQ_sales$ContractDate)
+Prospect$DateAdded <- mdy(Prospect$DateAdded)
+```
+
+```{r create product categories}
+# Create sub categories for each type of product in a city
+ABQ_PC_sales <- subset(ABQ_sales, ABQ_sales$productid == "PC")
+ABQ_Bath_sales <- subset(ABQ_sales, ABQ_sales$productid == "Bath")
+ABQ_Sun_sales <- subset(ABQ_sales, ABQ_sales$productid == "Sun")
+ABQ_Kitchen_sales <- subset(ABQ_sales, ABQ_sales$productid == "Kitchen")
+ABQ_Win_sales <- subset(ABQ_sales, ABQ_sales$productid == "Win")
+
+RR_PC_sales <- subset(RR_sales, RR_sales$productid == "PC")
+RR_Bath_sales <- subset(RR_sales, RR_sales$productid == "Bath")
+RR_Sun_sales <- subset(RR_sales, RR_sales$productid == "Sun")
+RR_Kitchen_sales <- subset(RR_sales, RR_sales$productid == "Kitchen")
+RR_Win_sales <- subset(RR_sales, RR_sales$productid == "Win")
+
+SF_PC_sales <- subset(SF_sales, SF_sales$productid == "PC")
+SF_Bath_sales <- subset(SF_sales, SF_sales$productid == "Bath")
+SF_Sun_sales <- subset(SF_sales, SF_sales$productid == "Sun")
+SF_Kitchen_sales <- subset(SF_sales, SF_sales$productid == "Kitchen")
+SF_Win_sales <- subset(SF_sales, SF_sales$productid == "Win")
+
+Metro_PC_sales <- subset(Metro_sales, Metro_sales$productid == "PC")
+Metro_Bath_sales <- subset(Metro_sales, Metro_sales$productid == "Bath")
+Metro_Sun_sales <- subset(Metro_sales, Metro_sales$productid == "Sun")
+Metro_Kitchen_sales <- subset(Metro_sales, Metro_sales$productid == "Kitchen")
+Metro_Win_sales <- subset(Metro_sales, Metro_sales$productid == "Win")
+
+Total_PC_sales <- subset(Sales, Sales$productid == "PC")
+Total_Bath_sales <- subset(Sales, Sales$productid == "Bath")
+Total_Sun_sales <- subset(Sales, Sales$productid == "Sun")
+Total_Kitchen_sales <- subset(Sales, Sales$productid == "Kitchen")
+Total_Win_sales <- subset(Sales, Sales$productid == "Win")
+
+```
+
+```{r distance function}
+earth.dist <- function (long1, lat1, long2, lat2) {
+  rad <- pi/180
+  a1 <- lat1 * rad
+  a2 <- long2 * rad
+  b1 <- lat2 * rad
+  b2 <- long2 * rad
+  dlon <- b2 - a2
+  dlat <- b1 - a1
+  
+  a <- (sin(dlat/2))^2 + cos(a1) * cos(b1) * (sin(dlon/2))^2
+  c <- 2 * atan2(sqrt(a), sqrt(1 - a))
+  R <-6378.145
+  d <- R * c
+  return(d)
+}
+```
+
+```{r remove outlier function}
+Data.no_outlier <- function (Dataframe_raw, col_to_correct) {
+
+  Data_valid_sales <- subset(Dataframe_raw, col_to_correct > 0)  
+  
+  Q1 <- quantile(col_to_correct, .25)
+  Q3 <- quantile(col_to_correct, .75)
+
+  IQR <- IQR(col_to_correct)
+
+  Adjusted_data <- subset(Data_valid_sales,
+                          col_to_correct > (Q1 - 1.5*IQR) &
+                          col_to_correct < (Q3 + 1.5*IQR))
+  
+  return(Adjusted_data)
+}
+```
+
+```{r categorize by zip function}
+Data.by_zip <- function(Sales_to_adjust) {
+  
+  # Subset the dataframe and categorize the results by Zip Code, then summarize major stats
+  Sales_by_zip <- Sales_to_adjust %>%
+    group_by(Zip) %>%
+    dplyr::summarize(
+      count = n(),
+      mean_Value = mean(GrossAmount),
+      min_Value = min(GrossAmount),
+      first_quartile = quantile(GrossAmount, 0.25),
+      med_Value = median(GrossAmount),
+      third_quartile = quantile(GrossAmount, 0.75),
+      max_Value = max(GrossAmount),
+      sd_Value = sd(GrossAmount)
+    ) %>%
+    arrange(-count)
+  
+  # Get the name of the file in order to label the chart
+  data_title <- deparse(substitute(Sales_to_adjust))
+  
+  # Parse the title to create the correct format
+  chartr("_", " ", data_title)
+
+  kable(Sales_by_zip,
+        col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+        caption= data_title)%>%
+  kable_styling()
+  
+  return(Sales_by_zip)
+}
+```
+
+```{r remove outliers for RR Data}
+# Add empty column to each set of sales/prospect data
+RR_sales['Distance'] <- NA
+ABQ_sales['Distance'] <- NA
+SF_sales['Distance'] <- NA
+
+# Calculate distance from the calculated center of each area
+RR_sales$Distance <- earth.dist(RR_sales$Longitude,
+                                RR_sales$Latitude,
+                                mean(RR_sales$Longitude),
+                                mean(RR_sales$Latitude))
+ABQ_sales$Distance <- earth.dist(ABQ_sales$Longitude,
+                                ABQ_sales$Latitude,
+                                mean(ABQ_sales$Longitude),
+                                mean(ABQ_sales$Latitude))
+SF_sales$Distance <- earth.dist(SF_sales$Longitude,
+                                SF_sales$Latitude,
+                                mean(SF_sales$Longitude),
+                                mean(SF_sales$Latitude))
+
+# Filter results farther than X miles from the center of the area
+RR_sales <- RR_sales[RR_sales$Distance <= 10,] 
+ABQ_sales <- ABQ_sales[ABQ_sales$Distance <= 15,]
+SF_sales <- SF_sales[SF_sales$Distance <= 20,]
+```
+
+```{r fetch and save maps for future use, out.width = "100%", fig.align = "center"}
+
+if (!file.exists("Maps/NM_map.RData")){
+NM <- ggmap(get_googlemap(center = c(lon = -106.018066, lat =34.307144),
+                          zoom = 7, scale = 2, 
+                          maptype = 'roadmap', 
+                          color = 'bw'))
+save(NM, file = "Maps/NM_map.RData")
+}
+
+if (!file.exists("Maps/Metro_map.RData")){
+Metro <- ggmap(get_googlemap(center = c(lon = mean(Metro_sales$Longitude), mean(Metro_sales$Latitude)),
+                          zoom = 11, scale = 1, 
+                          maptype = 'roadmap', 
+                          color = 'bw'))
+save(Metro, file = "Maps/Metro_map.RData")
+}
+
+if (!file.exists("Maps/RR_map.RData")){
+RR <- ggmap(get_googlemap(center = c(lon = mean(RR_sales$Longitude), mean(RR_sales$Latitude)),
+                          zoom = 12, scale = 1, 
+                          maptype = 'roadmap', 
+                          color = 'bw'))
+save(RR, file = "Maps/RR_map.RData")
+}
+
+if (!file.exists("Maps/SFcounty_map.RData")){
+SFcounty <- ggmap(get_googlemap(center = c(lon = mean(SF_sales$Longitude), mean(SF_sales$Latitude)),
+                          zoom = 11, scale = 1, 
+                          maptype = 'roadmap', 
+                          color = 'bw'))
+save(SFcounty, file = "Maps/SFcounty_map.RData")
+}
+
+if (!file.exists("Maps/SF_map.RData")){
+SF <- ggmap(get_googlemap(center = c(lon = mean(SF_sales$Longitude), mean(SF_sales$Latitude)),
+                          zoom = 12, scale = 1, 
+                          maptype = 'roadmap', 
+                          color = 'bw'))
+save(SF, file = "Maps/SF_map.RData")
+}
+```
+
+```{r load maps from file}
+load(file = "Maps/Metro_map.RData")
+load(file = "Maps/NM_map.RData")
+load(file = "Maps/RR_map.RData")
+load(file = "Maps/SF_map.RData")
+load(file = "Maps/SFcounty_map.RData")
+```
+
+```{r Santa Fe maps, out.width = "100%", fig.align = "center"}
+# Santa Fe Total
+SF +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = SF_sales,
+                    size = 1,
+                    adjust = .05) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Santa Fe Total Sales")
+
+SF_sales_by_zip <- Data.by_zip(SF_sales)
+
+SF_sales_by_zip <- SF_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(SF_sales_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Santa Fe Sales by Zip")%>%
+  kable_styling()
+
+
+# Santa Fe Patio Cover
+SF +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = SF_PC_sales,
+                    size = 1,
+                    adjust = .05) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Santa Fe Patio Cover Sales")
+
+SF_PC_by_zip <- SF_PC_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(SF_PC_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Santa Fe Patio Cover Sales by Zip")%>%
+  kable_styling()
+
+# Santa Fe Sunroom
+SF +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = SF_Sun_sales,
+                    size = 1,
+                    adjust = .05) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Santa Fe Sunroom Sales")
+
+SF_Sun_by_zip <- SF_Sun_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(SF_Sun_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Santa Fe Sunroom Sales by Zip")%>%
+  kable_styling()
+
+# Santa Fe Bath
+SF +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = SF_Bath_sales,
+                    size = 1,
+                    adjust = .05) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Santa Fe Bath Sales")
+
+SF_Bath_by_zip <- SF_Bath_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(SF_Bath_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Santa Fe Bath Sales by Zip")%>%
+  kable_styling()
+
+# Santa Fe Kitchen
+SF +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = SF_Kitchen_sales,
+                    size = 1,
+                    adjust = .05) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Santa Fe Kitchen Sales")
+
+SF_Kitchen_by_zip <- SF_Kitchen_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(SF_Kitchen_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Santa Fe Kitchen Sales by Zip")%>%
+  kable_styling()
+
+# Santa Fe Window
+SF +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = SF_Win_sales,
+                    size = 1,
+                    adjust = .05) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Santa Fe Window Sales")
+
+SF_Win_by_zip <- SF_Win_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(SF_Win_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Santa Fe Window Sales by Zip")%>%
+  kable_styling()
+```
+
+```{r Rio Rancho maps, out.width = "100%", fig.align = "center"}
+# Rio Rancho Total
+RR + 
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = RR_sales,
+                    size = 1,
+                    adjust = .01) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Rio Rancho Total Sales")
+
+RR_sales_by_zip <- RR_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(RR_sales_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Rio Rancho Sales by Zip")%>%
+  kable_styling()
+
+# Rio Rancho Total
+RR + 
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = RR_PC_sales,
+                    size = 1,
+                    adjust = .01) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Rio Rancho Patio Cover Sales")
+
+RR_PC_by_zip <- RR_PC_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(RR_PC_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Rio Rancho Patio Cover Sales by Zip")%>%
+  kable_styling()
+
+# Rio Rancho Sunroom
+RR + 
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = RR_Sun_sales,
+                    size = 1,
+                    adjust = .01) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Rio Rancho Sunroom Sales")
+
+RR_Sun_by_zip <- RR_Sun_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(RR_Sun_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Rio Rancho Sunroom Sales by Zip")%>%
+  kable_styling()
+
+# Rio Rancho Bath
+RR + 
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = RR_Bath_sales,
+                    size = 1,
+                    adjust = .01) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Rio Rancho Bath Sales")
+
+RR_Bath_by_zip <- RR_Bath_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(RR_Bath_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Rio Rancho Bath Sales by Zip")%>%
+  kable_styling()
+
+# Rio Rancho Kitchen
+RR + 
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = RR_Kitchen_sales,
+                    size = 1,
+                    adjust = .01) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Rio Rancho Kitchen Sales")
+
+RR_Kitchen_by_zip <- RR_Kitchen_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(RR_Kitchen_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Rio Rancho Kitchen Sales by Zip")%>%
+  kable_styling()
+
+
+
+# Rio Rancho Window Sales
+RR + 
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = RR_Win_sales,
+                    size = 1,
+                    adjust = .01) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Rio Rancho Window Sales")
+
+RR_Win_by_zip <- RR_Win_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(RR_Win_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Rio Rancho Window Sales by Zip")%>%
+  kable_styling()
+
+```
+
+```{r Metro maps, out.width = "100%", fig.align = "center"}
+# Metro Total Sales
+Metro +
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = Metro_sales,
+                    size = .5,
+                    adjust = .01) +
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Metro Area Total Sales")
+
+Metro_sales_by_zip <- Metro_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Metro_sales_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "ABQ Metro Sales by Zip")%>%
+  kable_styling()
+
+# Metro Patio Cover Sales
+Metro +
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = Metro_PC_sales,
+                    size = .5,
+                    adjust = .01)+
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Metro Area Patio Cover Sales")
+
+Metro_PC_by_zip <- Metro_PC_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Metro_PC_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "ABQ Metro Patio Cover Sales by Zip")%>%
+  kable_styling()
+
+# Metro Sunroom Sales
+Metro +
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = Metro_Sun_sales,
+                    size = .5,
+                    adjust = .01)+
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Metro Area Sunrooom Sales")
+
+Metro_Sun_by_zip <- Metro_Sun_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Metro_Sun_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "ABQ Metro Sunroom Sales by Zip")%>%
+  kable_styling()
+
+# Metro Bath Sales
+Metro +
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = Metro_Bath_sales,
+                    size = .5,
+                    adjust = .01)+
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Metro Area Bath Sales")
+
+Metro_Bath_by_zip <- Metro_Bath_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Metro_Bath_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "ABQ Metro Bathroom Sales by Zip")%>%
+  kable_styling()
+
+# Metro Kitchen Sales
+Metro +
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = Metro_Kitchen_sales,
+                    size = .5,
+                    adjust = .01)+
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Metro Area Kitchen Sales")
+
+Metro_Kitchen_by_zip <- Metro_Kitchen_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Metro_Kitchen_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "ABQ Metro Kitchen Sales by Zip")%>%
+  kable_styling()
+
+# Metro Window Sales
+Metro +
+  geom_pointdensity(aes(x = Longitude, y = Latitude),
+                    data = Metro_Win_sales,
+                    size = .5,
+                    adjust = .01)+
+  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  ggtitle("Metro Area Window Sales")
+
+Metro_Win_by_zip <- Metro_Win_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Metro_Win_by_zip,
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "ABQ Metro Window Sales by Zip")%>%
+  kable_styling()
+```
+
+```{r break out specific products, out.width = "100%", fig.align = "center"}
+
+# Remove all outliers from the total sales for the company
+Sales_matrix <- data.frame(Sales$ContractDate, Sales$GrossAmount)
+
+Q1 <- quantile(Sales_matrix$Sales.GrossAmount, .25)
+Q3 <- quantile(Sales_matrix$Sales.GrossAmount, .75)
+
+IQR <- IQR(Sales_matrix$Sales.GrossAmount)
+
+Sales_no_outlier <- subset(Sales_matrix,
+                          Sales_matrix$Sales.GrossAmount > (Q1 - 1.5*IQR) &
+                            Sales_matrix$Sales.GrossAmount < (Q3 + 1.5*IQR))
+
+p1 = calendarHeat(
+  Sales_no_outlier$Sales.ContractDate,
+  Sales_no_outlier$Sales.GrossAmount,
+  color = 'r2b',
+  ncolors = 15,
+  varname = "Historic Sales Seasonality")
+
+```
+
+```{r remove outliers form data}
+ABQ_PC_sales <- Data.no_outlier(ABQ_PC_sales, ABQ_PC_sales$GrossAmount)
+ABQ_Bath_sales <- Data.no_outlier(ABQ_Bath_sales, ABQ_Bath_sales$GrossAmount)
+ABQ_Sun_sales <- Data.no_outlier(ABQ_Sun_sales, ABQ_Sun_sales$GrossAmount)
+ABQ_Kitchen_sales <- Data.no_outlier(ABQ_Kitchen_sales, ABQ_Kitchen_sales$GrossAmount)
+ABQ_Win_sales <- Data.no_outlier(ABQ_Win_sales, ABQ_Win_sales$GrossAmount)
+
+RR_PC_sales <- Data.no_outlier(RR_PC_sales, RR_PC_sales$GrossAmount)
+RR_Bath_sales <- Data.no_outlier(RR_Bath_sales, RR_Bath_sales$GrossAmount)
+RR_Sun_sales <- Data.no_outlier(RR_Sun_sales, RR_Sun_sales$GrossAmount)
+RR_Kitchen_sales <- Data.no_outlier(RR_Kitchen_sales, RR_Kitchen_sales$GrossAmount)
+RR_Win_sales <- Data.no_outlier(RR_Win_sales, RR_Win_sales$GrossAmount)
+
+SF_PC_sales <- Data.no_outlier(SF_PC_sales, SF_PC_sales$GrossAmount)
+SF_Bath_sales <- Data.no_outlier(SF_Bath_sales, SF_Bath_sales$GrossAmount)
+SF_Sun_sales <- Data.no_outlier(SF_Sun_sales, SF_Sun_sales$GrossAmount)
+SF_Kitchen_sales <- Data.no_outlier(SF_Kitchen_sales, SF_Kitchen_sales$GrossAmount)
+SF_Win_sales <- Data.no_outlier(SF_Win_sales, SF_Win_sales$GrossAmount)
+
+Metro_PC_sales <- Data.no_outlier(Metro_PC_sales, Metro_PC_sales$GrossAmount)
+Metro_Bath_sales <- Data.no_outlier(Metro_Bath_sales, Metro_Bath_sales$GrossAmount)
+Metro_Sun_sales <- Data.no_outlier(Metro_Sun_sales, Metro_Sun_sales$GrossAmount)
+Metro_Kitchen_sales <- Data.no_outlier(Metro_Kitchen_sales, Metro_Kitchen_sales$GrossAmount)
+Metro_Win_sales <- Data.no_outlier(Metro_Win_sales, Metro_Win_sales$GrossAmount)
+
+Total_PC_sales <- Data.no_outlier(Total_PC_sales, Total_PC_sales$GrossAmount)
+Total_Bath_sales <- Data.no_outlier(Total_Bath_sales, Total_Bath_sales$GrossAmount)
+Total_Sun_sales <- Data.no_outlier(Total_Sun_sales, Total_Sun_sales$GrossAmount)
+Total_Kitchen_sales <- Data.no_outlier(Total_Kitchen_sales, Total_Kitchen_sales$GrossAmount)
+Total_Win_sales <- Data.no_outlier(Total_Win_sales, Total_Win_sales$GrossAmount)
+
+```
+
+```{r timeseries, out.width = "100%", fig.align = "center"}
+#devtools::install_github('Ather-Energy/ggTimeSeries')
+
+G1 <- ggplot(Total_PC_sales, aes(x=ContractDate, y=GrossAmount)) +
+  geom_point() + 
+  geom_smooth() +
+  xlab("Date") +
+  ylab("Contract Amount")+
+  ggtitle("Patio cover contract price over time") 
+G1
+
+G2 <- ggplot(Total_Sun_sales, aes(x=ContractDate, y=GrossAmount)) +
+  geom_point() + 
+  geom_smooth() +
+  xlab("Date") +
+  ylab("Contract Amount")+
+  ggtitle("Sunroom contract price over time") 
+G2
+
+G3 <- ggplot(Total_Bath_sales, aes(x=ContractDate, y=GrossAmount)) +
+  geom_point() + 
+  geom_smooth() +
+  xlab("Date") +
+  ylab("Contract Amount")+
+  ggtitle("Bath contract price over time") 
+G3
+
+G4 <- ggplot(Total_Kitchen_sales, aes(x=ContractDate, y=GrossAmount)) +
+  geom_point() + 
+  geom_smooth() +
+  xlab("Date") +
+  ylab("Contract Amount")+
+  ggtitle("Kitchen contract price over time") 
+G4
+
+G5 <- ggplot(Total_Win_sales, aes(x=ContractDate, y=GrossAmount)) +
+  geom_point() + 
+  geom_smooth() +
+  xlab("Date") +
+  ylab("Contract Amount")+
+  ggtitle("Window contract price over time") 
+G5
+```
+
+```{r citation}
+sessionInfo()
+```
