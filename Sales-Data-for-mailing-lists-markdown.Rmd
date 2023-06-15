@@ -1,7 +1,7 @@
 ---
 title: "Sales location analysis"
 author: "Ian Thulin"
-date: "2023-05-11"
+date: "2023-06-14"
 output:
   html_document: default
 ---
@@ -341,14 +341,14 @@ SF_sales_by_zip <- SF_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(SF_sales_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Sales by Zip")%>%
   kable_styling()
 
@@ -371,14 +371,14 @@ SF_PC_by_zip <- SF_PC_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(SF_PC_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Patio Cover Sales by Zip")%>%
   kable_styling()
 
@@ -400,14 +400,14 @@ SF_Sun_by_zip <- SF_Sun_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(SF_Sun_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Sunroom Sales by Zip")%>%
   kable_styling()
 
@@ -429,14 +429,14 @@ SF_Bath_by_zip <- SF_Bath_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(SF_Bath_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Bath Sales by Zip")%>%
   kable_styling()
 
@@ -458,14 +458,14 @@ SF_Kitchen_by_zip <- SF_Kitchen_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(SF_Kitchen_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Kitchen Sales by Zip")%>%
   kable_styling()
 
@@ -487,14 +487,14 @@ SF_Win_by_zip <- SF_Win_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(SF_Win_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Window Sales by Zip")%>%
   kable_styling()
 ```
@@ -507,14 +507,14 @@ RR_Bath_by_zip <- RR_Bath_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(RR_Bath_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Sales by Zip")%>%
   kable_styling()
 
@@ -538,14 +538,14 @@ RR_sales_by_zip <- RR_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(RR_sales_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Sales by Zip")%>%
   kable_styling()
 
@@ -566,14 +566,14 @@ RR_PC_by_zip <- RR_PC_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(RR_PC_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Patio Cover Sales by Zip")%>%
   kable_styling()
 
@@ -594,14 +594,14 @@ RR_Sun_by_zip <- RR_Sun_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(RR_Sun_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Sunroom Sales by Zip")%>%
   kable_styling()
 
@@ -622,14 +622,14 @@ RR_Bath_by_zip <- RR_Bath_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(RR_Bath_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Bath Sales by Zip")%>%
   kable_styling()
 
@@ -650,14 +650,14 @@ RR_Kitchen_by_zip <- RR_Kitchen_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(RR_Kitchen_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Kitchen Sales by Zip")%>%
   kable_styling()
 
@@ -680,14 +680,14 @@ RR_Win_by_zip <- RR_Win_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(RR_Win_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Window Sales by Zip")%>%
   kable_styling()
 
@@ -711,14 +711,14 @@ Metro_sales_by_zip <- Metro_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(Metro_sales_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Sales by Zip")%>%
   kable_styling()
 
@@ -739,14 +739,14 @@ Metro_PC_by_zip <- Metro_PC_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(Metro_PC_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Patio Cover Sales by Zip")%>%
   kable_styling()
 
@@ -767,14 +767,14 @@ Metro_Sun_by_zip <- Metro_Sun_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(Metro_Sun_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Sunroom Sales by Zip")%>%
   kable_styling()
 
@@ -795,14 +795,14 @@ Metro_Bath_by_zip <- Metro_Bath_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(Metro_Bath_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Bathroom Sales by Zip")%>%
   kable_styling()
 
@@ -823,14 +823,14 @@ Metro_Kitchen_by_zip <- Metro_Kitchen_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(Metro_Kitchen_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Kitchen Sales by Zip")%>%
   kable_styling()
 
@@ -851,14 +851,14 @@ Metro_Win_by_zip <- Metro_Win_sales %>%
     min_Value = min(GrossAmount),
     first_quartile = quantile(GrossAmount, 0.25),
     med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.25),
+    third_quartile = quantile(GrossAmount, 0.75),
     max_Value = max(GrossAmount),
     sd_Value = sd(GrossAmount)
   ) %>%
   arrange(-count)
 
 kable(Metro_Win_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Median", "Min", "Q1", "Q3", "Max", "Std Dev"),
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Window Sales by Zip")%>%
   kable_styling()
 ```
