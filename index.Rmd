@@ -151,7 +151,7 @@ ggmap::register_google(key="AIzaSyAP8DfNNEAWuwN8aa2Ew_TopWR1rPLlSC4")
 ```{r create datasets for mapping}
 Data <- read.csv("Data/Geolocated Data - Sales & Prospect - 5.11.2023.csv")
 
-# Remove all data fields taht do not have a contract date
+# Remove all data fields that do not have a contract date
 Sales <- subset(Data, (!is.na(Data$ContractDate)))
 Prospect <- subset(Data, (is.na(Data$ContractDate)))
 
@@ -356,6 +356,183 @@ load(file = "Maps/SF_map.RData")
 load(file = "Maps/SFcounty_map.RData")
 ```
 
+```{r NM Sales Map, out.width = "100%", fig.align = "center"}
+# Total Sales
+NM +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = Sales,
+                    size = .5,
+                    adjust = .01) +
+  scale_color_viridis() +
+  ggtitle("Total Sales")
+
+Total_sales_by_zip <- Sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Total_sales_by_zip[1:10, ],
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Total Sales by Zip")%>%
+  kable_styling()
+
+
+# Total Patio Cover
+NM +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = Total_PC_sales,
+                    size = .5,
+                    adjust = .01) +
+  scale_color_viridis() +
+  ggtitle("Total Patio Cover Sales")
+
+Total_PC_by_zip <- Total_PC_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Total_PC_by_zip[1:10, ],
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Santa Fe Patio Cover Sales by Zip")%>%
+  kable_styling()
+
+# Total Sunroom
+NM +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = Total_Sun_sales,
+                    size = .05,
+                    adjust = .01) +
+  scale_color_viridis() +
+  ggtitle("Total Sunroom Sales")
+
+Total_Sun_by_zip <- Total_Sun_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Total_Sun_by_zip[1:10, ],
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Total Sunroom Sales by Zip")%>%
+  kable_styling()
+
+# Total Bath
+NM +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = Total_Bath_sales,
+                    size = .05,
+                    adjust = .01) +
+  scale_color_viridis() +
+  ggtitle("Total Bath Sales")
+
+Total_Bath_by_zip <- Total_Bath_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Total_Bath_by_zip[1:10, ],
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Total Bath Sales by Zip")%>%
+  kable_styling()
+
+# Total Kitchen
+NM +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = Total_Kitchen_sales,
+                    size = .05,
+                    adjust = .01) +
+  scale_color_viridis() +
+  ggtitle("Total Kitchen Sales")
+
+Total_Kitchen_by_zip <- Total_Kitchen_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Total_Kitchen_by_zip[1:10, ],
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Total Kitchen Sales by Zip")%>%
+  kable_styling()
+
+# Total Window
+NM +
+  geom_pointdensity(aes(x = Longitude,
+                    y = Latitude),
+                    data = Total_Win_sales,
+                    size = .05,
+                    adjust = .01) +
+  scale_color_viridis() +
+  ggtitle("Total Window Sales")
+
+Total_Win_by_zip <- Total_Win_sales %>%
+  group_by(Zip) %>%
+  dplyr::summarize(
+    count = n(),
+    mean_Value = mean(GrossAmount),
+    min_Value = min(GrossAmount),
+    first_quartile = quantile(GrossAmount, 0.25),
+    med_Value = median(GrossAmount),
+    third_quartile = quantile(GrossAmount, 0.75),
+    max_Value = max(GrossAmount),
+    sd_Value = sd(GrossAmount)
+  ) %>%
+  arrange(-count)
+
+kable(Total_Win_by_zip[1:10, ],
+      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+      caption= "Total Window Sales by Zip")%>%
+  kable_styling()
+```
+
 ```{r Santa Fe maps, out.width = "100%", fig.align = "center"}
 # Santa Fe Total
 SF +
@@ -364,10 +541,8 @@ SF +
                     data = SF_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Santa Fe Total Sales")
-
-SF_sales_by_zip <- Data.by_zip(SF_sales)
 
 SF_sales_by_zip <- SF_sales %>%
   group_by(Zip) %>%
@@ -383,7 +558,7 @@ SF_sales_by_zip <- SF_sales %>%
   ) %>%
   arrange(-count)
 
-kable(SF_sales_by_zip,
+kable(SF_sales_by_zip[1:10, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Sales by Zip")%>%
   kable_styling()
@@ -396,7 +571,7 @@ SF +
                     data = SF_PC_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Santa Fe Patio Cover Sales")
 
 SF_PC_by_zip <- SF_PC_sales %>%
@@ -413,7 +588,7 @@ SF_PC_by_zip <- SF_PC_sales %>%
   ) %>%
   arrange(-count)
 
-kable(SF_PC_by_zip,
+kable(SF_PC_by_zip[1:7, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Patio Cover Sales by Zip")%>%
   kable_styling()
@@ -425,7 +600,7 @@ SF +
                     data = SF_Sun_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Santa Fe Sunroom Sales")
 
 SF_Sun_by_zip <- SF_Sun_sales %>%
@@ -442,7 +617,7 @@ SF_Sun_by_zip <- SF_Sun_sales %>%
   ) %>%
   arrange(-count)
 
-kable(SF_Sun_by_zip,
+kable(SF_Sun_by_zip[1:8, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Sunroom Sales by Zip")%>%
   kable_styling()
@@ -454,7 +629,7 @@ SF +
                     data = SF_Bath_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Santa Fe Bath Sales")
 
 SF_Bath_by_zip <- SF_Bath_sales %>%
@@ -471,7 +646,7 @@ SF_Bath_by_zip <- SF_Bath_sales %>%
   ) %>%
   arrange(-count)
 
-kable(SF_Bath_by_zip,
+kable(SF_Bath_by_zip[1:5, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Bath Sales by Zip")%>%
   kable_styling()
@@ -483,7 +658,7 @@ SF +
                     data = SF_Kitchen_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Santa Fe Kitchen Sales")
 
 SF_Kitchen_by_zip <- SF_Kitchen_sales %>%
@@ -500,7 +675,7 @@ SF_Kitchen_by_zip <- SF_Kitchen_sales %>%
   ) %>%
   arrange(-count)
 
-kable(SF_Kitchen_by_zip,
+kable(SF_Kitchen_by_zip[1:4, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Kitchen Sales by Zip")%>%
   kable_styling()
@@ -512,7 +687,7 @@ SF +
                     data = SF_Win_sales,
                     size = 1,
                     adjust = .05) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Santa Fe Window Sales")
 
 SF_Win_by_zip <- SF_Win_sales %>%
@@ -529,7 +704,7 @@ SF_Win_by_zip <- SF_Win_sales %>%
   ) %>%
   arrange(-count)
 
-kable(SF_Win_by_zip,
+kable(SF_Win_by_zip[1:7, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Window Sales by Zip")%>%
   kable_styling()
@@ -542,7 +717,7 @@ RR +
                     data = RR_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Rio Rancho Total Sales")
 
 RR_sales_by_zip <- RR_sales %>%
@@ -559,7 +734,7 @@ RR_sales_by_zip <- RR_sales %>%
   ) %>%
   arrange(-count)
 
-kable(RR_sales_by_zip,
+kable(RR_sales_by_zip[1:6, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Sales by Zip")%>%
   kable_styling()
@@ -570,7 +745,7 @@ RR +
                     data = RR_PC_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Rio Rancho Patio Cover Sales")
 
 RR_PC_by_zip <- RR_PC_sales %>%
@@ -587,7 +762,7 @@ RR_PC_by_zip <- RR_PC_sales %>%
   ) %>%
   arrange(-count)
 
-kable(RR_PC_by_zip,
+kable(RR_PC_by_zip[1:5, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Patio Cover Sales by Zip")%>%
   kable_styling()
@@ -598,7 +773,7 @@ RR +
                     data = RR_Sun_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Rio Rancho Sunroom Sales")
 
 RR_Sun_by_zip <- RR_Sun_sales %>%
@@ -615,7 +790,7 @@ RR_Sun_by_zip <- RR_Sun_sales %>%
   ) %>%
   arrange(-count)
 
-kable(RR_Sun_by_zip,
+kable(RR_Sun_by_zip[1:4, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Sunroom Sales by Zip")%>%
   kable_styling()
@@ -626,7 +801,7 @@ RR +
                     data = RR_Bath_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Rio Rancho Bath Sales")
 
 RR_Bath_by_zip <- RR_Bath_sales %>%
@@ -643,7 +818,7 @@ RR_Bath_by_zip <- RR_Bath_sales %>%
   ) %>%
   arrange(-count)
 
-kable(RR_Bath_by_zip,
+kable(RR_Bath_by_zip[1:2, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Bath Sales by Zip")%>%
   kable_styling()
@@ -654,7 +829,7 @@ RR +
                     data = RR_Kitchen_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Rio Rancho Kitchen Sales")
 
 RR_Kitchen_by_zip <- RR_Kitchen_sales %>%
@@ -671,7 +846,7 @@ RR_Kitchen_by_zip <- RR_Kitchen_sales %>%
   ) %>%
   arrange(-count)
 
-kable(RR_Kitchen_by_zip,
+kable(RR_Kitchen_by_zip[1:2, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Kitchen Sales by Zip")%>%
   kable_styling()
@@ -684,7 +859,7 @@ RR +
                     data = RR_Win_sales,
                     size = 1,
                     adjust = .01) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Rio Rancho Window Sales")
 
 RR_Win_by_zip <- RR_Win_sales %>%
@@ -701,7 +876,7 @@ RR_Win_by_zip <- RR_Win_sales %>%
   ) %>%
   arrange(-count)
 
-kable(RR_Win_by_zip,
+kable(RR_Win_by_zip[1:4, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Rio Rancho Window Sales by Zip")%>%
   kable_styling()
@@ -715,7 +890,7 @@ Metro +
                     data = Metro_sales,
                     size = .5,
                     adjust = .01) +
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Metro Area Total Sales")
 
 Metro_sales_by_zip <- Metro_sales %>%
@@ -732,7 +907,7 @@ Metro_sales_by_zip <- Metro_sales %>%
   ) %>%
   arrange(-count)
 
-kable(Metro_sales_by_zip,
+kable(Metro_sales_by_zip[1:10, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Sales by Zip")%>%
   kable_styling()
@@ -743,7 +918,7 @@ Metro +
                     data = Metro_PC_sales,
                     size = .5,
                     adjust = .01)+
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Metro Area Patio Cover Sales")
 
 Metro_PC_by_zip <- Metro_PC_sales %>%
@@ -760,7 +935,7 @@ Metro_PC_by_zip <- Metro_PC_sales %>%
   ) %>%
   arrange(-count)
 
-kable(Metro_PC_by_zip,
+kable(Metro_PC_by_zip[1:10, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Patio Cover Sales by Zip")%>%
   kable_styling()
@@ -771,7 +946,7 @@ Metro +
                     data = Metro_Sun_sales,
                     size = .5,
                     adjust = .01)+
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Metro Area Sunrooom Sales")
 
 Metro_Sun_by_zip <- Metro_Sun_sales %>%
@@ -788,7 +963,7 @@ Metro_Sun_by_zip <- Metro_Sun_sales %>%
   ) %>%
   arrange(-count)
 
-kable(Metro_Sun_by_zip,
+kable(Metro_Sun_by_zip[1:10, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Sunroom Sales by Zip")%>%
   kable_styling()
@@ -799,7 +974,7 @@ Metro +
                     data = Metro_Bath_sales,
                     size = .5,
                     adjust = .01)+
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Metro Area Bath Sales")
 
 Metro_Bath_by_zip <- Metro_Bath_sales %>%
@@ -816,7 +991,7 @@ Metro_Bath_by_zip <- Metro_Bath_sales %>%
   ) %>%
   arrange(-count)
 
-kable(Metro_Bath_by_zip,
+kable(Metro_Bath_by_zip[1:10, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Bathroom Sales by Zip")%>%
   kable_styling()
@@ -827,7 +1002,7 @@ Metro +
                     data = Metro_Kitchen_sales,
                     size = .5,
                     adjust = .01)+
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Metro Area Kitchen Sales")
 
 Metro_Kitchen_by_zip <- Metro_Kitchen_sales %>%
@@ -844,7 +1019,7 @@ Metro_Kitchen_by_zip <- Metro_Kitchen_sales %>%
   ) %>%
   arrange(-count)
 
-kable(Metro_Kitchen_by_zip,
+kable(Metro_Kitchen_by_zip[1:10, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Kitchen Sales by Zip")%>%
   kable_styling()
@@ -855,7 +1030,7 @@ Metro +
                     data = Metro_Win_sales,
                     size = .5,
                     adjust = .01)+
-  scale_color_distiller(palette= 'YlOrRd', direction= 1) +
+  scale_color_viridis() +
   ggtitle("Metro Area Window Sales")
 
 Metro_Win_by_zip <- Metro_Win_sales %>%
@@ -872,13 +1047,13 @@ Metro_Win_by_zip <- Metro_Win_sales %>%
   ) %>%
   arrange(-count)
 
-kable(Metro_Win_by_zip,
+kable(Metro_Win_by_zip[1:10, ],
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "ABQ Metro Window Sales by Zip")%>%
   kable_styling()
 ```
 
-```{r break out specific products, out.width = "100%", fig.align = "center"}
+```{r break out specific products, out.width = "100%", fig.align = "center", warning=FALSE}
 
 # Remove all outliers from the total sales for the company
 Sales_matrix <- data.frame(Sales$ContractDate, Sales$GrossAmount)
@@ -934,7 +1109,7 @@ Total_Win_sales <- Data.no_outlier(Total_Win_sales, Total_Win_sales$GrossAmount)
 
 ```
 
-```{r timeseries, out.width = "100%", fig.align = "center"}
+```{r timeseries, out.width = "100%", fig.align = "center", warning=FALSE}
 #devtools::install_github('Ather-Energy/ggTimeSeries')
 
 G1 <- ggplot(Total_PC_sales, aes(x=ContractDate, y=GrossAmount)) +
