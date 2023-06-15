@@ -230,18 +230,51 @@ earth.dist <- function (long1, lat1, long2, lat2) {
 ```{r remove outlier function}
 Data.no_outlier <- function (Dataframe_raw, col_to_correct) {
 
-Data_valid_sales <- subset(Dataframe_raw, col_to_correct > 0)  
+  Data_valid_sales <- subset(Dataframe_raw, col_to_correct > 0)  
   
-Q1 <- quantile(col_to_correct, .25)
-Q3 <- quantile(col_to_correct, .75)
+  Q1 <- quantile(col_to_correct, .25)
+  Q3 <- quantile(col_to_correct, .75)
 
-IQR <- IQR(col_to_correct)
+  IQR <- IQR(col_to_correct)
 
-Adjusted_data <- subset(Data_valid_sales,
+  Adjusted_data <- subset(Data_valid_sales,
                           col_to_correct > (Q1 - 1.5*IQR) &
-                            col_to_correct < (Q3 + 1.5*IQR))
+                          col_to_correct < (Q3 + 1.5*IQR))
   
   return(Adjusted_data)
+}
+```
+
+```{r categorize by zip function}
+Data.by_zip <- function(Sales_to_adjust) {
+  
+  # Subset the dataframe and categorize the results by Zip Code, then summarize major stats
+  Sales_by_zip <- Sales_to_adjust %>%
+    group_by(Zip) %>%
+    dplyr::summarize(
+      count = n(),
+      mean_Value = mean(GrossAmount),
+      min_Value = min(GrossAmount),
+      first_quartile = quantile(GrossAmount, 0.25),
+      med_Value = median(GrossAmount),
+      third_quartile = quantile(GrossAmount, 0.75),
+      max_Value = max(GrossAmount),
+      sd_Value = sd(GrossAmount)
+    ) %>%
+    arrange(-count)
+  
+  # Get the name of the file in order to label the chart
+  data_title <- deparse(substitute(Sales_to_adjust))
+  
+  # Parse the title to create the correct format
+  chartr("_", " ", data_title)
+
+  kable(Sales_by_zip,
+        col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
+        caption= data_title)%>%
+  kable_styling()
+  
+  return(Sales_by_zip)
 }
 ```
 
@@ -332,6 +365,8 @@ SF +
                     adjust = .05) +
   scale_color_distiller(palette= 'YlOrRd', direction= 1) +
   ggtitle("Santa Fe Total Sales")
+
+SF_sales_by_zip <- Data.by_zip(SF_sales)
 
 SF_sales_by_zip <- SF_sales %>%
   group_by(Zip) %>%
@@ -497,27 +532,6 @@ kable(SF_Win_by_zip,
       col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
       caption= "Santa Fe Window Sales by Zip")%>%
   kable_styling()
-```
-```{r Temp Rio, out.width = "100%", fig.align='center'}
-RR_Bath_by_zip <- RR_Bath_sales %>%
-  group_by(Zip) %>%
-  dplyr::summarize(
-    count = n(),
-    mean_Value = mean(GrossAmount),
-    min_Value = min(GrossAmount),
-    first_quartile = quantile(GrossAmount, 0.25),
-    med_Value = median(GrossAmount),
-    third_quartile = quantile(GrossAmount, 0.75),
-    max_Value = max(GrossAmount),
-    sd_Value = sd(GrossAmount)
-  ) %>%
-  arrange(-count)
-
-kable(RR_Bath_by_zip,
-      col.names = c("ZIP", "#", "Mean", "Min", "Q1", "Median", "Q3", "Max", "Std Dev"),
-      caption= "Rio Rancho Sales by Zip")%>%
-  kable_styling()
-
 ```
 
 ```{r Rio Rancho maps, out.width = "100%", fig.align = "center"}
