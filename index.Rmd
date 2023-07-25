@@ -1056,32 +1056,76 @@ kable(Metro_Win_by_zip[1:10, ],
 ```{r break out specific products, out.width = "100%", fig.align = "center", warning=FALSE}
 
 # Remove all outliers from the total sales for the company
-Sales_matrix <- data.frame(Sales$ContractDate, Sales$GrossAmount, Sales$productid)
+Sales_matrix <- data.frame(ContractDate = Sales$ContractDate,
+                           GrossAmount = Sales$GrossAmount,
+                           ProductID = Sales$productid)
 
-Sales_matrix <- Sales_matrix[Sales_matrix$Sales.ContractDate > "2000-01-01" & Sales_matrix$Sales.ContractDate < "2023-12-31",]
+Sales_matrix <- Sales_matrix[Sales_matrix$ContractDate > "2000-01-03" & Sales_matrix$ContractDate < "2023-12-31",]
 
-# Seperate all product lines
-Sales_series_patio_cover = subset(Sales_matrix, Sales_matrix$Sales.productid == "PC")
-Sales_series_sunroom = subset(Sales_matrix, Sales_matrix$Sales.productid == "Sun")
-Sales_series_bath = subset(Sales_matrix, Sales_matrix$Sales.productid == "Bath")
-Sales_series_kitchen = subset(Sales_matrix, Sales_matrix$Sales.productid == "Kitchen")
-Sales_series_window = subset(Sales_matrix, Sales_matrix$Sales.productid == "Win")
-
-# Remove any outliers from each sales category
-Q1 <- quantile(Sales_matrix$Sales.GrossAmount, .25)
-Q3 <- quantile(Sales_matrix$Sales.GrossAmount, .75)
-
-IQR <- IQR(Sales_matrix$Sales.GrossAmount)
-
+# Separate all product lines
+Sales_series_patio_cover = subset(Sales_matrix, Sales_matrix$ProductID == "PC")
+Sales_series_sunroom = subset(Sales_matrix, Sales_matrix$ProductID == "Sun")
+Sales_series_bath = subset(Sales_matrix, Sales_matrix$ProductID == "Bath")
+Sales_series_kitchen = subset(Sales_matrix, Sales_matrix$ProductID == "Kitchen")
+Sales_series_window = subset(Sales_matrix, Sales_matrix$ProductID == "Win")
 date_series <- data.frame(Date = seq(ymd("2000-01-01"), ymd("2023-12-31"), "days"))
 
+# Remove any outliers from each sales category
+Q1 <- quantile(Sales_matrix$GrossAmount, .25)
+Q3 <- quantile(Sales_matrix$GrossAmount, .75)
+
+IQR <- IQR(Sales_matrix$GrossAmount)
 
 Sales_no_outlier <- subset(Sales_matrix,
-                          Sales_matrix$Sales.GrossAmount > (Q1 - 1.5*IQR) &
-                            Sales_matrix$Sales.GrossAmount < (Q3 + 1.5*IQR))
-# Reintroduce the date series to all sales records
-combined_series <- left_join(date_series, Sales_no_outlier, by = join_by("Date" == "Sales.ContractDate"))
+                          Sales_matrix$GrossAmount > (Q1 - 1.5*IQR) &
+                            Sales_matrix$GrossAmount < (Q3 + 1.5*IQR))
 
+PC_Q1 <- quantile(Sales_series_patio_cover$GrossAmount, .25)
+PC_Q3 <- quantile(Sales_series_patio_cover$GrossAmount, .75)
+
+PC_IQR <- IQR(Sales_series_patio_cover$GrossAmount)
+
+PC_no_outlier <- subset(Sales_series_patio_cover,
+                          Sales_series_patio_cover$GrossAmount > (PC_Q1 - 1.5*PC_IQR) &
+                            Sales_series_patio_cover$GrossAmount < (PC_Q3 + 1.5*PC_IQR))
+
+SR_Q1 <- quantile(Sales_series_sunroom$GrossAmount, .25)
+SR_Q3 <- quantile(Sales_series_sunroom$GrossAmount, .75)
+
+SR_IQR <- IQR(Sales_series_sunroom$GrossAmount)
+
+SR_no_outlier <- subset(Sales_series_sunroom,
+                          Sales_series_sunroom$GrossAmount > (SR_Q1 - 1.5*SR_IQR) &
+                            Sales_series_sunroom$GrossAmount < (SR_Q3 + 1.5*SR_IQR))
+
+Bath_Q1 <- quantile(Sales_series_bath$GrossAmount, .25)
+Bath_Q3 <- quantile(Sales_series_bath$GrossAmount, .75)
+
+Bath_IQR <- IQR(Sales_series_bath$GrossAmount)
+
+Bath_no_outlier <- subset(Sales_series_bath,
+                          Sales_series_bath$GrossAmount > (Bath_Q1 - 1.5*Bath_IQR) &
+                            Sales_series_bath$GrossAmount < (Bath_Q3 + 1.5*Bath_IQR))
+
+Kitchen_Q1 <- quantile(Sales_series_kitchen$GrossAmount, .25)
+Kitchen_Q3 <- quantile(Sales_series_kitchen$GrossAmount, .75)
+
+Kitchen_IQR <- IQR(Sales_series_kitchen$GrossAmount)
+
+Kitchen_no_outlier <- subset(Sales_series_kitchen,
+                          Sales_series_kitchen$GrossAmount > (Kitchen_Q1 - 1.5*Kitchen_IQR) &
+                            Sales_series_kitchen$GrossAmount < (Kitchen_Q3 + 1.5*Kitchen_IQR))
+
+Win_Q1 <- quantile(Sales_series_window$GrossAmount, .25)
+Win_Q3 <- quantile(Sales_series_window$GrossAmount, .75)
+
+Win_IQR <- IQR(Sales_series_window$GrossAmount)
+
+Win_no_outlier <- subset(Sales_series_window,
+                          Sales_series_window$GrossAmount > (Win_Q1 - 1.5*Win_IQR) &
+                            Sales_series_window$GrossAmount < (Win_Q3 + 1.5*Win_IQR))
+# Reintroduce the date series to all sales records
+combined_series <- left_join(date_series, Sales_no_outlier, by = join_by("Date" == "ContractDate"))
 Sales_series <- data.frame(Date = combined_series$Date,
                            Year = cut(combined_series$Date,
                                       breaks = "1 year",
@@ -1089,14 +1133,161 @@ Sales_series <- data.frame(Date = combined_series$Date,
                            Day = cut(combined_series$Date,
                                       breaks = "day",
                                       labels = FALSE,
-                                      start.on.monday = TRUE) %% 366,
-                           GrossAmount = combined_series$Sales.GrossAmount)
+                                      start.on.monday = TRUE) %% 365,
+                           GrossAmount = combined_series$GrossAmount)
 
+combined_series_pc <- left_join(date_series, PC_no_outlier, by = join_by("Date" == "ContractDate"))
+PC_series <- data.frame(Date = combined_series_pc$Date,
+                           Year = cut(combined_series_pc$Date,
+                                      breaks = "1 year",
+                                      labels = FALSE) + 1999,
+                           Day = cut(combined_series_pc$Date,
+                                      breaks = "day",
+                                      labels = FALSE,
+                                      start.on.monday = TRUE) %% 365,
+                           GrossAmount = combined_series_pc$GrossAmount)
+
+combined_series_sun <- left_join(date_series, SR_no_outlier, by = join_by("Date" == "ContractDate"))
+Sun_series <- data.frame(Date = combined_series_sun$Date,
+                           Year = cut(combined_series_sun$Date,
+                                      breaks = "1 year",
+                                      labels = FALSE) + 1999,
+                           Day = cut(combined_series_sun$Date,
+                                      breaks = "day",
+                                      labels = FALSE,
+                                      start.on.monday = TRUE) %% 365,
+                           GrossAmount = combined_series_sun$GrossAmount)
+
+combined_series_bath <- left_join(date_series, Bath_no_outlier, by = join_by("Date" == "ContractDate"))
+Bath_series <- data.frame(Date = combined_series_bath$Date,
+                           Year = cut(combined_series_bath$Date,
+                                      breaks = "1 year",
+                                      labels = FALSE) + 1999,
+                           Day = cut(combined_series_bath$Date,
+                                      breaks = "day",
+                                      labels = FALSE,
+                                      start.on.monday = TRUE) %% 365,
+                           GrossAmount = combined_series_bath$GrossAmount)
+
+combined_series_kitchen <- left_join(date_series, Kitchen_no_outlier, by = join_by("Date" == "ContractDate"))
+Kitchen_series <- data.frame(Date = combined_series_kitchen$Date,
+                           Year = cut(combined_series_kitchen$Date,
+                                      breaks = "1 year",
+                                      labels = FALSE) + 1999,
+                           Day = cut(combined_series_kitchen$Date,
+                                      breaks = "day",
+                                      labels = FALSE,
+                                      start.on.monday = TRUE) %% 365,
+                           GrossAmount = combined_series_kitchen$GrossAmount)
+
+combined_series_win <- left_join(date_series, Win_no_outlier, by = join_by("Date" == "ContractDate"))
+Win_series <- data.frame(Date = combined_series_win$Date,
+                           Year = cut(combined_series_win$Date,
+                                      breaks = "1 year",
+                                      labels = FALSE) + 1999,
+                           Day = cut(combined_series_win$Date,
+                                      breaks = "day",
+                                      labels = FALSE,
+                                      start.on.monday = TRUE) %% 365,
+                           GrossAmount = combined_series_win$GrossAmount)
+```
+
+``` {r plot time series, out.width = "100%", fig.align = "center", warning=FALSE}
 # Plot the different time series for each sales category
-p2 = ggplot(Sales_series, aes(x = Day, y = Year, fill = GrossAmount)) +
+p2 = ggplot(Sales_series, aes(x=Year, y = Day, fill = GrossAmount)) +
   geom_raster() +
-  scale_y_reverse(expand = c(0,0))
+  xlab("Calendar Year") +
+  ylab("Fiscal Quarter") +
+  ggtitle("Seasonality of Total Sales") +
+  labs(fill = "Contract Price") +
+  scale_y_continuous(labels= c("0" = "Jan 1", "91" = "Q1", "182" = "Q2", "273" = "Q3", "364" = "Q4"),
+                     expand = c(0, 0)) + 
+  scale_x_continuous(breaks= c(2000, 2002, 2004, 2006, 2008,
+                               2010, 2012, 2014, 2016, 2018,
+                               2020, 2022),
+                       expand = c(0, 0)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
 p2
+
+p3 = ggplot(PC_series, aes(x=Year, y = Day, fill = GrossAmount)) +
+  geom_raster() +
+  xlab("Calendar Year") +
+  ylab("Fiscal Quarter") +
+  ggtitle("Seasonality of Patio Cover Sales") +
+  labs(fill = "Contract Price") +
+  scale_y_continuous(labels= c("0" = "Jan 1", "91" = "Q1", "182" = "Q2", "273" = "Q3", "364" = "Q4"),
+                     expand = c(0, 0)) + 
+  scale_x_continuous(breaks= c(2000, 2002, 2004, 2006, 2008,
+                               2010, 2012, 2014, 2016, 2018,
+                               2020, 2022),
+                       expand = c(0, 0)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+p3
+
+p4 = ggplot(Sun_series, aes(x=Year, y = Day, fill = GrossAmount)) +
+  geom_raster() +
+  xlab("Calendar Year") +
+  ylab("Fiscal Quarter") +
+  ggtitle("Seasonality of Sunroom Sales") +
+  labs(fill = "Contract Price") +
+  scale_y_continuous(labels= c("0" = "Jan 1", "91" = "Q1", "182" = "Q2", "273" = "Q3", "364" = "Q4"),
+                     expand = c(0, 0)) + 
+  scale_x_continuous(breaks= c(2000, 2002, 2004, 2006, 2008,
+                               2010, 2012, 2014, 2016, 2018,
+                               2020, 2022),
+                       expand = c(0, 0)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+p4
+
+p5 = ggplot(Bath_series, aes(x=Year, y = Day, fill = GrossAmount)) +
+  geom_raster() +
+  xlab("Calendar Year") +
+  ylab("Fiscal Quarter") +
+  ggtitle("Seasonality of Bath Sales") +
+  labs(fill = "Contract Price") +
+  scale_y_continuous(labels= c("0" = "Jan 1", "91" = "Q1", "182" = "Q2", "273" = "Q3", "364" = "Q4"),
+                     expand = c(0, 0)) + 
+  scale_x_continuous(breaks= c(2000, 2002, 2004, 2006, 2008,
+                               2010, 2012, 2014, 2016, 2018,
+                               2020, 2022),
+                       expand = c(0, 0)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+p5
+
+p6 = ggplot(Kitchen_series, aes(x=Year, y = Day, fill = GrossAmount)) +
+  geom_raster() +
+  xlab("Calendar Year") +
+  ylab("Fiscal Quarter") +
+  ggtitle("Seasonality of Kitchen Sales") +
+  labs(fill = "Contract Price") +
+  scale_y_continuous(labels= c("0" = "Jan 1", "91" = "Q1", "182" = "Q2", "273" = "Q3", "364" = "Q4"),
+                     expand = c(0, 0)) + 
+  scale_x_continuous(breaks= c(2000, 2002, 2004, 2006, 2008,
+                               2010, 2012, 2014, 2016, 2018,
+                               2020, 2022),
+                       expand = c(0, 0)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+p6
+
+p7 = ggplot(Win_series, aes(x=Year, y = Day, fill = GrossAmount)) +
+  geom_raster() +
+  xlab("Calendar Year") +
+  ylab("Fiscal Quarter") +
+  ggtitle("Seasonality of Window Sales") +
+  labs(fill = "Contract Price") +
+  scale_y_continuous(labels= c("0" = "Jan 1", "91" = "Q1", "182" = "Q2", "273" = "Q3", "364" = "Q4"),
+                     expand = c(0, 0)) + 
+  scale_x_continuous(breaks= c(2000, 2002, 2004, 2006, 2008,
+                               2010, 2012, 2014, 2016, 2018,
+                               2020, 2022),
+                       expand = c(0, 0)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+p7
+
+```
+```{r stats}
+summary(Win_series)
+summary(PC_series)
 ```
 
 ```{r remove outliers form data}
