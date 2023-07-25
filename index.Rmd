@@ -1056,24 +1056,47 @@ kable(Metro_Win_by_zip[1:10, ],
 ```{r break out specific products, out.width = "100%", fig.align = "center", warning=FALSE}
 
 # Remove all outliers from the total sales for the company
-Sales_matrix <- data.frame(Sales$ContractDate, Sales$GrossAmount)
+Sales_matrix <- data.frame(Sales$ContractDate, Sales$GrossAmount, Sales$productid)
 
+Sales_matrix <- Sales_matrix[Sales_matrix$Sales.ContractDate > "2000-01-01" & Sales_matrix$Sales.ContractDate < "2023-12-31",]
+
+# Seperate all product lines
+Sales_series_patio_cover = subset(Sales_matrix, Sales_matrix$Sales.productid == "PC")
+Sales_series_sunroom = subset(Sales_matrix, Sales_matrix$Sales.productid == "Sun")
+Sales_series_bath = subset(Sales_matrix, Sales_matrix$Sales.productid == "Bath")
+Sales_series_kitchen = subset(Sales_matrix, Sales_matrix$Sales.productid == "Kitchen")
+Sales_series_window = subset(Sales_matrix, Sales_matrix$Sales.productid == "Win")
+
+# Remove any outliers from each sales category
 Q1 <- quantile(Sales_matrix$Sales.GrossAmount, .25)
 Q3 <- quantile(Sales_matrix$Sales.GrossAmount, .75)
 
 IQR <- IQR(Sales_matrix$Sales.GrossAmount)
 
+date_series <- data.frame(Date = seq(ymd("2000-01-01"), ymd("2023-12-31"), "days"))
+
+
 Sales_no_outlier <- subset(Sales_matrix,
                           Sales_matrix$Sales.GrossAmount > (Q1 - 1.5*IQR) &
                             Sales_matrix$Sales.GrossAmount < (Q3 + 1.5*IQR))
+# Reintroduce the date series to all sales records
+combined_series <- left_join(date_series, Sales_no_outlier, by = join_by("Date" == "Sales.ContractDate"))
 
-p1 = calendarHeat(
-  Sales_no_outlier$Sales.ContractDate,
-  Sales_no_outlier$Sales.GrossAmount,
-  color = 'r2b',
-  ncolors = 15,
-  varname = "Historic Sales Seasonality")
+Sales_series <- data.frame(Date = combined_series$Date,
+                           Year = cut(combined_series$Date,
+                                      breaks = "1 year",
+                                      labels = FALSE) + 1999,
+                           Day = cut(combined_series$Date,
+                                      breaks = "day",
+                                      labels = FALSE,
+                                      start.on.monday = TRUE) %% 366,
+                           GrossAmount = combined_series$Sales.GrossAmount)
 
+# Plot the different time series for each sales category
+p2 = ggplot(Sales_series, aes(x = Day, y = Year, fill = GrossAmount)) +
+  geom_raster() +
+  scale_y_reverse(expand = c(0,0))
+p2
 ```
 
 ```{r remove outliers form data}
